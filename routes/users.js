@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var Users = require("../models/users.js");
+var User = require("../models").User;
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -21,18 +21,18 @@ router.get('/', function(req, res, next) {
 	 accessible as the "data" member of the response body:
 *	response.body:	{data: {username: "Jimmy123", id: 123, email:...},  ...}	
 **/
-router.post('/new_user', function(req, res, next) {
+router.post('/add-new-user', function(req, res, next) {
 	const new_entry = req.body;
-	console.log("/api/users/new_user request body: ", new_entry);
+	console.log("/users/add-new-user request body: ", new_entry);
 	const entry_uname = new_entry.username;
 	const entry_email = new_entry.email;
 	const entry_pwd = new_entry.password;
 
 	/* insert new entry into users table */
-	const query = Users.create({
+	return query = User.create({
 			username: entry_uname,
 			email: entry_email, 
-			password:entry_pwd
+			password: entry_pwd
 		},
 		{
 		    attributes: {
@@ -93,14 +93,14 @@ router.post('/new_user', function(req, res, next) {
 **/
 router.post("/login", (req, res, next) => {
 	const new_entry = req.body;
-	console.log("serving /api/users/login request: ", new_entry);
+	console.log("serving /users/login request: ", new_entry);
 	const entry_email = req.body.email;
 	const entry_pwd = req.body.password;
-	/* insert new entry into users table */
-	return db_tables.Users.findOne({
+	/* query for entry in users table */
+	return User.findOne({
 			where: {
 				email: entry_email, 
-				password:entry_pwd,
+				password: entry_pwd,
 			}
 		})
 		.then(user => {
@@ -128,7 +128,7 @@ router.post("/login", (req, res, next) => {
 
 
 router.post("/logout", (req, res, next) => {
-	console.log("serving /api/users/logout request: ");
+	console.log("serving /users/logout request: ");
 	/* Destroy the current session */
 	if (req.session) {
 		req.session.destroy();
