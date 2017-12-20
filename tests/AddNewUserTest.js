@@ -8,7 +8,7 @@ function handleAddNewUser () {
 	const pwd = "milk123";
 
 	return add_new_user(name, email, pwd)
-		.then ( user_data => console.log("(ADDNEWUSERTEST) new user entry:", user_data.data))
+		.then ( user_data => console.log("(ADDNEWUSERTEST) new user entry:", user_data))
 		.catch ( err => {
 			console.log("(ADDNEWUSERTEST) error:", err);
 			err => console.log("(ADDNEWUSERTEST) failed with errors.");

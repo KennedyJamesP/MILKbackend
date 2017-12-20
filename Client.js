@@ -4,7 +4,7 @@
 /* THIS MUST BE SET FALSE TO OPERATE THIS FILE THROUGH REACT IN A BROWSER,
 * AND MUST BE SET TRUE TO OPERATE THIS FILE FROM THE COMMAND LINE USING NODE
 */
-const DEPLOYED_TESTING = false;
+const DEPLOYED_TESTING = true;
 const fetch = require("node-fetch");
 /* duct tape for testing from command line node environment  */
 var prepend_path = "http://localhost:3000";
