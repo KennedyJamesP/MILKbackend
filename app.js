@@ -23,6 +23,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index);
 app.use('/users', users);
 
+app.get('/test', function(req, res,next){
+	res.json({"message":"M.I.L.K. TEST SUCCEEDED M.F."});
+})
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
