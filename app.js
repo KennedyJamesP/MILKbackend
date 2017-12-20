@@ -25,7 +25,7 @@ app.use('/users', users);
 
 app.get('/test', function(req, res,next){
 	res.json({
-		"message":"M.I.L.K. TEST SUCCEEDED M.F."
+		"message":"M.I.L.K. TEST SUCCEEDED M.F.",
 	 	"details":"JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD"
  	});
 })
