@@ -4,8 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
-var index = require('./routes/index');
+var db = require('./models');
 var users = require('./routes/users');
 
 var app = express();
@@ -20,15 +19,33 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
+
 app.use('/users', users);
 
 app.get('/test', function(req, res,next){
 	res.json({
-		"message":"M.I.L.K. TEST SUCCEEDED M.F.",
-	 	"details":"JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD"
+		"message": "JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD(SERVER REACHED SUCCESSFULLY)"
  	});
-})
+});
+
+
+/* GET users listing. */
+app.get('/', function(req, res, next) {
+  db.sequelize.authenticate()
+    .then(() => {
+      res.status(200).json({
+        message: "server and db connection have been established successfully.",
+        "details": "JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD"
+      });
+    })
+    .catch(err => {
+      res.status(420).json({
+        message: "Unable to connect to the database:",
+        error: err
+      });
+    });
+});
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -43,9 +60,12 @@ app.use(function(err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
+  // the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.json({
+    'messsage': 'Error', 
+    'error': err.message
+  });
 });
 
 module.exports = app;

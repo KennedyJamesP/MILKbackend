@@ -4,12 +4,11 @@
 /* THIS MUST BE SET FALSE TO OPERATE THIS FILE THROUGH REACT IN A BROWSER,
 * AND MUST BE SET TRUE TO OPERATE THIS FILE FROM THE COMMAND LINE USING NODE
 */
-const COMMAND_LINE_TESTING = true;
-
+const DEPLOYED_TESTING = false;
+const fetch = require("node-fetch");
 /* duct tape for testing from command line node environment  */
-var prepend_path = "";
-if (COMMAND_LINE_TESTING) {
-	const fetch = require("node-fetch");
+var prepend_path = "http://localhost:3000";
+if (DEPLOYED_TESTING) {
 	prepend_path = "https://milk-backend.herokuapp.com";
 }
 
@@ -167,6 +166,6 @@ function parseJSON(response) {
 
 
 module.exports = {  
-	add_new_user, get_user_by_uid, login, logout, 
+	add_new_user, get_user_by_uid, login, logout, fetch
 };
 

@@ -1,11 +1,12 @@
+/*
+* Author: James Kennedy jpkennedyiv@gmail.com
+*/
+
 var express = require('express');
 var router = express.Router();
-var User = require("../models").User;
-
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+var db = require ("../models");
+var User = db.users;
+var VERBOSE = false;
 
 /**	
 	This HTTP POST function creates a new user entry in the users table with the 
@@ -41,8 +42,9 @@ router.post('/add-new-user', function(req, res, next) {
 		})
 	  	.then( new_entry => { 
 			console.log("USERS.JS: New User inserted:", new_entry);
-				req.session.user_id = new_entry.id;
-				req.session.user_name = new_entry.username;
+				//TODO: decide wether to keep req.session
+				//req.session.user_id = new_entry.id;
+				//req.session.user_name = new_entry.username;
 			return new_entry;
 		})
 		.then( query_data => {
@@ -51,7 +53,7 @@ router.post('/add-new-user', function(req, res, next) {
 		.catch( err => {
 	    	console.log("USERS.JS->/new): Error creating new user:", err.message );
 
-	    	if (err instanceof Sequelize.ValidationError && err.errors) {
+	    	if (err instanceof db.Sequelize.ValidationError && err.errors) {
 	    		var err_msgs = [];
 	    		var message = "";
 	    		var each_err = "";
@@ -112,10 +114,10 @@ router.post("/login", (req, res, next) => {
 			}
 			else {
 				console.log("User logged in:", user );
-				//set session to store userID
-				req.session.user_id = user.id;
-				req.session.user_name = user.username;
-				console.log("session saved: " + JSON.stringify(req.session));
+				//TODO: set session to store userID
+				//req.session.user_id = user.id;
+				//req.session.user_name = user.username;
+				//console.log("session saved: " + JSON.stringify(req.session));
 				return res.json({message: "login successful", data: user});
 			}
 		})
@@ -129,10 +131,10 @@ router.post("/login", (req, res, next) => {
 
 router.post("/logout", (req, res, next) => {
 	console.log("serving /users/logout request: ");
-	/* Destroy the current session */
-	if (req.session) {
-		req.session.destroy();
-	}
+	/* TODO: Destroy the current session */
+	//if (req.session) {
+	//	req.session.destroy();
+	//}
 	return res.json({loggedout: true});
 })
 
