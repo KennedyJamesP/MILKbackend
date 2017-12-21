@@ -139,4 +139,30 @@ router.post("/logout", (req, res, next) => {
 })
 
 
+router.get("/get-user-by-username/:username", (req, res, next) =>{
+	var req_username = req.params.username;
+	if (!req_username) {
+		var err = new Error("No username provided in URI parameters.");
+		err.status = 403;
+		next(err);
+	}
+
+	return User.findOne({
+		where: {
+			username: req_username
+		}
+	})
+	.then(user => {
+		console.log("User successfully retrieved from db: "+ JSON.stringify(user));
+		return user;
+	})
+	.then(user => {
+		res.json({message: "success", data: user});
+	})
+	.catch(err => {
+		console.log("Error retrieving user from db:" + JSON.stringify(err));
+		next(err);
+	})
+})
+
 module.exports = router;

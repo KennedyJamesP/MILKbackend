@@ -1,10 +1,7 @@
-/* React Client module for communicating with express server. 
+/* JavaScript Client module for communicating with express server. 
 */
 
-/* THIS MUST BE SET FALSE TO OPERATE THIS FILE THROUGH REACT IN A BROWSER,
-* AND MUST BE SET TRUE TO OPERATE THIS FILE FROM THE COMMAND LINE USING NODE
-*/
-const DEPLOYED_TESTING = true;
+const DEPLOYED_TESTING = false;
 const fetch = require("node-fetch");
 /* duct tape for testing from command line node environment  */
 var prepend_path = "http://localhost:3000";
@@ -107,13 +104,13 @@ function logout(){
 }
 
 
-/* this function gets someone else's profile information by uid 
+/* this function gets someone else's profile information by username 
 * ...including their email and password
 * BAD BAD BAD but good for testing 
 */
-function get_user_by_uid (uid) {
+function get_user_by_username (username) {
 
-	return fetch("/users/get-user-by-id/" + uid, {
+	return fetch(prepend_path + "/users/get-user-by-username/" + username, {
 			method: "GET",
 			headers: {accept: "application/json"},
         	credentials: "same-origin",
@@ -121,13 +118,13 @@ function get_user_by_uid (uid) {
 		.then(checkStatus)
 		.then(parseJSON)
 		.then(result => {
-			console.log("(CLIENT.JS->GET_USER_BY_UID) Response OK with new user data obj: ", result.data);
-			console.log("(CLIENT.JS->GET_USER_BY_UID) responded with status OK"); 
+			console.log("(CLIENT.JS->GET_USER_BY_USERNAME) Response OK with new user data obj: ", result.data);
+			console.log("(CLIENT.JS->GET_USER_BY_USERNAME) responded with status OK"); 
 			return result.data;
 		} )
 		.catch(function(error) {  
-			console.log("(CLIENT.JS->GET_USER_BY_UID) Request Error:", error);
-			console.log("(CLIENT.JS->GET_USER_BY_UID) Request Failed with Errors.");
+			console.log("(CLIENT.JS->GET_USER_BY_USERNAME) Request Error:", error);
+			console.log("(CLIENT.JS->GET_USER_BY_USERNAME) Request Failed with Errors.");
 			throw error.body;  
 		});
 }
@@ -166,6 +163,6 @@ function parseJSON(response) {
 
 
 module.exports = {  
-	add_new_user, get_user_by_uid, login, logout, fetch
+	add_new_user, get_user_by_username, login, logout, fetch
 };
 
