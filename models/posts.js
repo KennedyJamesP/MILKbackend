@@ -1,7 +1,9 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
-  var pictures = sequelize.define('pictures', {
-    picture: DataTypes.BLOB
+  var pictures = sequelize.define('posts', {
+    pictureID: DataTypes.INTEGER,
+    location: DataTypes.TEXT,
+    userID: DataTypes.INTEGER
   }, {
     classMethods: {
       associate: function(models) {

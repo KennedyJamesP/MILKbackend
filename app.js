@@ -23,15 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/users', users);
 
 app.get('/test', function(req, res,next){
-	res.json({
-		"message": "JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD(SERVER REACHED SUCCESSFULLY)"
- 	});
-});
-
-
-/* GET users listing. */
-app.get('/', function(req, res, next) {
-  db.sequelize.authenticate()
+	db.sequelize.authenticate()
     .then(() => {
       res.status(200).json({
         message: "server and db connection have been established successfully.",
@@ -44,6 +36,14 @@ app.get('/', function(req, res, next) {
         error: err
       });
     });
+});
+
+
+/* GET users listing. */
+app.get('/', function(req, res, next) {
+  res.json({
+    "message": "JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD(SERVER REACHED SUCCESSFULLY)"
+  });
 });
 
 
@@ -63,8 +63,8 @@ app.use(function(err, req, res, next) {
   // the error page
   res.status(err.status || 500);
   res.json({
-    'messsage': 'Error', 
-    'error': err.message
+    'messsage': 'Error: ' + err.messsage, 
+    'error': err
   });
 });
 

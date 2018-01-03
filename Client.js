@@ -1,7 +1,8 @@
 /* JavaScript Client module for communicating with express server. 
+* Author: James Kennedy jpkennedyiv@gmail.com
 */
 
-const DEPLOYED_TESTING = false;
+const DEPLOYED_TESTING = true;
 const fetch = require("node-fetch");
 /* duct tape for testing from command line node environment  */
 var prepend_path = "http://localhost:3000";
