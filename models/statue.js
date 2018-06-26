@@ -2,7 +2,11 @@
 
 module.exports = (sequelize, DataTypes) => {
   var statue = sequelize.define('statue', {
-    id: DataTypes.INTEGER,
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
     artist_desc: DataTypes.STRING,
     artist_name: DataTypes.STRING,
     artist_url: DataTypes.STRING,

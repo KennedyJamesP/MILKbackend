@@ -8,21 +8,6 @@ var db = require ("../models");
 var User = db.users;
 var VERBOSE = false;
 
-/**	
-	This HTTP POST function creates a new user entry in the users table with the 
-* name and email arguments provided in the request.
-*
-* endpoint: /api/users/new_user
-* http method type: POST
-* Arguments: new user's username, password and email must be sent in the body of the request as JSON:
-* request.body: {username: "Jimmy123", email: "jimmy's email", password:"jimmys pwd"}
-
-* Returns: if successful, a response is sent with status code 200 containing the 
-	JSON encoded object with the created user's username, email and assigned unique id,
-	 accessible as the "data" member of the response body:
-*	response.body:	{data: {username: "Jimmy123", id: 123, email:...},  ...}	
-**/
-
 //Created By: Noah Davidson
 router.post('/signup', function(req, res, next) {
 	const body = req.body;
@@ -30,6 +15,10 @@ router.post('/signup', function(req, res, next) {
 	const email = body.email;
 	const username = body.username;
 	const password = body.password;
+
+	if (!email || !username || !password) {
+		return res.status(403).json({error: "Failed to complete signup form"});
+	}
 
 	let user = User.findOrCreate({
 			where: {email: email},
@@ -83,23 +72,35 @@ router.get("/user/:id", (req, res, next) =>{
 		next(err);
 	}
 
-	return User.findOne({
+	User.findOne({
 		where: {
 			id: req_id
 		}
 	})
 	.then(user => {
 		console.log("User successfully retrieved from db: "+ JSON.stringify(user));
-		return user;
-	})
-	.then(user => {
-		res.json({message: "success", data: user});
+		return res.json({message: "success", data: user});;
 	})
 	.catch(err => {
 		console.log("Error retrieving user from db:" + JSON.stringify(err));
 		next(err);
 	})
 });
+
+/**	
+	This HTTP POST function creates a new user entry in the users table with the 
+* name and email arguments provided in the request.
+*
+* endpoint: /api/users/new_user
+* http method type: POST
+* Arguments: new user's username, password and email must be sent in the body of the request as JSON:
+* request.body: {username: "Jimmy123", email: "jimmy's email", password:"jimmys pwd"}
+
+* Returns: if successful, a response is sent with status code 200 containing the 
+	JSON encoded object with the created user's username, email and assigned unique id,
+	 accessible as the "data" member of the response body:
+*	response.body:	{data: {username: "Jimmy123", id: 123, email:...},  ...}	
+**/
 
 router.post('/add-new-user', function(req, res, next) {
 	const new_entry = req.body;
@@ -185,7 +186,6 @@ router.post("/login", (req, res, next) => {
 			}
 		})
 		.then(user => {
-
 			if (user === null) {
 				return res.status(401).json({
 					message: "Log in failed: Email or password was not correct."

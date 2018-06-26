@@ -2,7 +2,11 @@
 
 module.exports = (sequelize, DataTypes) => {
   var image = sequelize.define('image', {
-    id: DataTypes.INTEGER,
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
     height: DataTypes.INTEGER,
     width: DataTypes.INTEGER,
     url: DataTypes.STRING,

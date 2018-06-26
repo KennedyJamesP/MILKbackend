@@ -1,12 +1,14 @@
 {
+  "models": {
+    "underscore": "true"
+  },
   "development": {
     "username": "test",
     "password": "test123",
     "database": "milk_test_db",
     "host": "localhost",
     "port": "5432",
-    "dialect": "postgres",
-    "underscored": "true"
+    "dialect": "postgres"
   },
   "test": {
     "username": "test",
@@ -14,11 +16,9 @@
     "database": "milk_test_db",
     "host": "localhost",
     "port": "5432",
-    "dialect": "postgres",
-    "underscored": "true"
+    "dialect": "postgres"
   },
   "production": {
-    "use_env_variable": "DATABASE_URL",
-    "underscored": "true"
+    "use_env_variable": "DATABASE_URL"
   }
 }
