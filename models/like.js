@@ -1,9 +1,10 @@
 'use strict';
+
 module.exports = (sequelize, DataTypes) => {
-  var comments = sequelize.define('comments', {
-    pictureID: DataTypes.INTEGER,
-    userID: DataTypes.INTEGER,
-    comment: DataTypes.TEXT
+  var like = sequelize.define('like', {
+    user_id: DataTypes.INTEGER,
+    model_name: DataTypes.STRING,
+    model_id: DataTypes.STRING
   }, {
     classMethods: {
       associate: function(models) {
@@ -11,5 +12,6 @@ module.exports = (sequelize, DataTypes) => {
       }
     }
   });
-  return comments;
+
+  return like;
 };

@@ -23,7 +23,6 @@ if (DEPLOYED_TESTING) {
 *		{name: "NAME", id: 123, ...}	
 */
 function add_new_user(name, email, pwd) {
-
 	return fetch(prepend_path + "/users/add-new-user", {
 		method: "POST",
 		credentials: "same-origin",//this line enables cookies 
@@ -54,7 +53,6 @@ function add_new_user(name, email, pwd) {
 
 
 function login(email, pwd) {
-
 	return fetch(prepend_path + "/users/login", {
 		method: "POST",
         credentials: "same-origin", // enables session cookie

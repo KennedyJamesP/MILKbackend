@@ -22,6 +22,10 @@ var VERBOSE = false;
 	 accessible as the "data" member of the response body:
 *	response.body:	{data: {username: "Jimmy123", id: 123, email:...},  ...}	
 **/
+
+//For: .findOrCreate operation
+//http://sequelize.readthedocs.io/en/2.0/docs/models-definition/#configuration
+
 router.post('/add-new-user', function(req, res, next) {
 	const new_entry = req.body;
 	console.log("/users/add-new-user request body: ", new_entry);

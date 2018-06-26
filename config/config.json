@@ -5,7 +5,8 @@
     "database": "milk_test_db",
     "host": "localhost",
     "port": "5432",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "underscored": "true"
   },
   "test": {
     "username": "test",
@@ -13,9 +14,11 @@
     "database": "milk_test_db",
     "host": "localhost",
     "port": "5432",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "underscored": "true"
   },
   "production": {
-    "use_env_variable": "DATABASE_URL"
+    "use_env_variable": "DATABASE_URL",
+    "underscored": "true"
   }
 }
