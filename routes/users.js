@@ -23,8 +23,83 @@ var VERBOSE = false;
 *	response.body:	{data: {username: "Jimmy123", id: 123, email:...},  ...}	
 **/
 
-//For: .findOrCreate operation
-//http://sequelize.readthedocs.io/en/2.0/docs/models-definition/#configuration
+//Created By: Noah Davidson
+router.post('/signup', function(req, res, next) {
+	const body = req.body;
+
+	const email = body.email;
+	const username = body.username;
+	const password = body.password;
+
+	let user = User.findOrCreate({
+			where: {email: email},
+			defaults: {emai: email, username: username, password: password}, 
+			attributes: {exclude: ['password']}
+		})
+	  .spread(function(user, created) {
+	    console.log('Created: ' + created);
+	    console.log('User: ' + user);
+	    return user;
+  	})
+  	.fail(function(err) {
+		   console.log('Signup Error occured', err);
+		   return res.status(400).json({error: err});
+		});
+
+	if (user) {
+		return res.status(400).json({error: "Email already exists"});
+	}
+});
+
+//Created By: Noah Davidson
+router.post('/signin', function(req, res, next) {
+	const body = req.body;
+
+	const email = body.email;
+	const password = body.password;
+
+	let user = User.findOne({
+		where: {
+			email: email,
+			password: password,
+		}
+	})
+	.then(user => {
+		return user;
+	})
+	.catch(err => {
+		console.log("Error logging user in: ", err);
+		res.status(500).json({message: "Log in failed", error: err.message });
+	});
+});
+
+//Created By: Noah Davidson 
+router.get("/user/:id", (req, res, next) =>{
+	var req_id = req.params.id;
+
+	if (!req_id) {
+		var err = new Error("No username provided in URI parameters.");
+		err.status = 403;
+		next(err);
+	}
+
+	return User.findOne({
+		where: {
+			id: req_id
+		}
+	})
+	.then(user => {
+		console.log("User successfully retrieved from db: "+ JSON.stringify(user));
+		return user;
+	})
+	.then(user => {
+		res.json({message: "success", data: user});
+	})
+	.catch(err => {
+		console.log("Error retrieving user from db:" + JSON.stringify(err));
+		next(err);
+	})
+});
 
 router.post('/add-new-user', function(req, res, next) {
 	const new_entry = req.body;
