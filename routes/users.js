@@ -2,13 +2,16 @@
 * Author: James Kennedy jpkennedyiv@gmail.com
 */
 
+//For form validation should use
+//https://www.npmjs.com/package/express-validator
+
 var express = require('express');
 var router = express.Router();
 var db = require ("../models");
 var User = db.users;
 var VERBOSE = false;
 
-//Created By: Noah Davidson
+//Created By: Noah Davidson... mostly JP's
 router.post('/signup', function(req, res, next) {
 	const body = req.body;
 
@@ -16,28 +19,53 @@ router.post('/signup', function(req, res, next) {
 	const username = body.username;
 	const password = body.password;
 
-	if (!email || !username || !password) {
-		return res.status(403).json({error: "Failed to complete signup form"});
-	}
+	/* insert new entry into users table */
+	return User.create({
+		username: username,
+		email: email, 
+		password: password
+	},
+	{
+    attributes: {
+      exclude: ['password']
+    }
+	})
+  .then( result => { 
+		console.log("USERS.JS: New User inserted:", result);
+			//TODO: decide wether to keep req.session
+			//req.session.user_id = new_entry.id;
+			//req.session.user_name = new_entry.username;
+		res.json({message: 'ok', data:result});
+	})
+	.catch( err => {
+  	console.log("USERS.JS->/new): Error creating new user:", err.message );
 
-	let user = User.findOrCreate({
-			where: {email: email},
-			defaults: {emai: email, username: username, password: password}, 
-			attributes: {exclude: ['password']}
-		})
-	  .spread(function(user, created) {
-	    console.log('Created: ' + created);
-	    console.log('User: ' + user);
-	    return user;
-  	})
-  	.fail(function(err) {
-		   console.log('Signup Error occured', err);
-		   return res.status(400).json({error: err});
-		});
+  	if (err instanceof db.Sequelize.ValidationError && err.errors) {
+  		var err_msgs = [];
+  		var message = "";
+  		var each_err = "";
+  		for (var err_idx = 0; err_idx < err.errors.length; err_idx++) {
+  			each_err = err.errors[err_idx];
+  			if (VERBOSE) console.log ("error: ", each_err);
+    		message = "";
+  			if (each_err.type === "unique violation") {
+  				message = "A user account already exists for the provided "	+ each_err.path
+  					 + ": " + each_err.value;
+  			}
+  			else {
+  				message = each_err.message;
+  			}
 
-	if (user) {
-		return res.status(400).json({error: "Email already exists"});
-	}
+  			err_msgs.push(message);
+  		}
+
+  		if (VERBOSE) console.log ("err_msgs: ", err_msgs);
+
+			return res.status(400).json({error: err_msgs.join(", ")});
+  	}
+
+  	return res.status(500).json({error: err.message});
+  });
 });
 
 //Created By: Noah Davidson
@@ -47,7 +75,7 @@ router.post('/signin', function(req, res, next) {
 	const email = body.email;
 	const password = body.password;
 
-	let user = User.findOne({
+	return User.findOne({
 		where: {
 			email: email,
 			password: password,
@@ -58,33 +86,19 @@ router.post('/signin', function(req, res, next) {
 	})
 	.catch(err => {
 		console.log("Error logging user in: ", err);
-		res.status(500).json({message: "Log in failed", error: err.message });
+		res.status(401).json({error: err.message});
 	});
 });
 
 //Created By: Noah Davidson 
 router.get("/user/:id", (req, res, next) =>{
-	var req_id = req.params.id;
+	var id = req.params.id;
 
-	if (!req_id) {
-		var err = new Error("No username provided in URI parameters.");
-		err.status = 403;
-		next(err);
+	if (!id) {
+		return res.status(400).json({error: "no id provided"});
 	}
 
-	User.findOne({
-		where: {
-			id: req_id
-		}
-	})
-	.then(user => {
-		console.log("User successfully retrieved from db: "+ JSON.stringify(user));
-		return res.json({message: "success", data: user});;
-	})
-	.catch(err => {
-		console.log("Error retrieving user from db:" + JSON.stringify(err));
-		next(err);
-	})
+	return User.get_user_by_id(id)
 });
 
 /**	

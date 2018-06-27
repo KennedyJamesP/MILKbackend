@@ -7,12 +7,16 @@ var db = require ("../models");
 var User = db.users;
 var VERBOSE = false;
 
-//TODO Seralize all Post routes
+const model_name = "Post";
 
 route.get('/posts/:id', function(req, res, next) {
 	const id = req.params.id;
 
-	return Posts.get(id);
+	if (!id) {
+    return res.status(400).json({error: "no id provided"});
+  }
+
+	return Posts.get_by_id(id);
 });
 
 router.get('/posts', function(req, res, next) {
@@ -47,11 +51,11 @@ router.get('/posts', function(req, res, next) {
 		})
 		.catch(err => 
 			console.log("Error getting all posts: ", err);
-		  res.status(500).json({message: "Failed getting posts", error: err.message });
+		  res.status(404).json({error: err.message});
 		);
 	}
 
-	Posts.findAndCountAll({
+	return Posts.findAndCountAll({
 		where: {
 			...query_params
 		}
@@ -61,11 +65,12 @@ router.get('/posts', function(req, res, next) {
   .then(result => {
     console.log(result.count);
     console.log(result.rows);
+    //may need to patch together paginated object here
     return result;
   })
   .catch(err => {
   	console.log("Error getting posts: ", err);
-		res.status(500).json({error: err.message});
+		return res.status(404).json({error: err.message});
   })
 });
 
@@ -79,7 +84,7 @@ router.post('/posts', function(req, res, next) {
 	//TODO configure aws s3 upload 
 	//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
 
-	// const photoKey = 'dummy.png';
+	const photoKey = 'dummy.png';
 	// s3.upload({
 	//     Key: photoKey,
 	//     Body: file,
@@ -90,17 +95,37 @@ router.post('/posts', function(req, res, next) {
 	//     }
 	//     alert('Successfully uploaded photo.');
 	//   });
+	let post = Post.perform_create(user_id, location, null);
 
-	let post = Post.create({
-		location: location,
-		user_id: user_id,
-		statue_id: null,
-	});
+	//pass statue to next state
+	res.locals.post = post;
+	res.locals.image_key = photoKey;
+	next();
+}, function(req,res,next) {
+	const post = res.locals.post;
+	const image_key = res.locals.image_key;
 
-	Image.create({
+	if (post.status >= 400) {
+		return post;
+	}
+
+	//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
+	let image = Image.create({
 		post_id: post.id,
-		url: "ASK NOAH FOR THE S3 BUCKET URL" + photoKey
+		url: "ASK NOAH FOR THE S3 BUCKET URL/" + image_key
+	})
+	.then(result => {
+		console.log("Successfully created image: ", result);
+		return result;
+	})
+	.catch(err => {
+		console.log("Failed to create image");
+		return res.status(500).json(error: err.message);
 	});
+
+	if (image.status >= 400) {
+		return post;
+	}
 
 	//TODO Serialize post w/ Comments, Likes, Images
 
@@ -109,39 +134,42 @@ router.post('/posts', function(req, res, next) {
 
 route.post('/posts/:id/comment', function(req, res, next) {
 	const body = req.body;
-	const id = req.params.id;
+	const post_id = req.params.id;
 
 	const text = body.text;
 
-	let post = Posts.get(id);
+	let post = Post.get_by_id(post_id);
 
-	Comment.create({
-		text: text,
-		user_id: ,//get session user id
-		model_name: "Post",
-		model_id: post.id,
-	});
+	if (post.status >= 400) {
+		return post;
+	}
+
+	//NEED TO GET USER_ID FROM SERVER SESSION OR PASS IN IN BODY
+	return Comment.create_with_model(model_name, post_id, user_id);
 });
 
 route.post('/posts/:id/like', function(req, res, next) {
 	const body = req.body;
-	const id = req.params.id;
+	const post_id = req.params.id;
 
 	const is_liked = body.is_liked;
 
-	let post = Posts.get(id);
+	const post = Post.get_by_id(post_id);
 
-	if (is_liked === post.is_liked) {
-		return res.status(400).json({error: "value is already set to: " + is_liked});
+	if (post.status >= 400 ) {
+		return post;
 	}
 
-	return post.update({
-		is_liked: is_liked
-	})
-	.then(result => {
-		return result
-	})
-	.catch(err => {
-		return res.status(500).json({error: "server could not update liked post"});
-	});
+	//NEED TO GET USER_ID FROM SERVER SESSION OR PASS IN IN BODY
+	const like = Like.get_like_by_user(post_id, user_id);
+
+	//create like if not found and user liked post
+	if (like.status >= 400 && is_liked) {
+		return Like.create_with_model(model_name, post_id, user_id);
+
+	//delete like if like found and user unliked post 
+	} else if (like.status >= 200 && like.status< 300 && is_liked === false) {
+		return Like.remove(model_name, post_id, user_id);
+
+	}
 });
