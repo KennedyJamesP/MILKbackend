@@ -18,6 +18,7 @@ var db = require('./models');
 var users = require('./routes/users');
 var statues = require('./routes/statues');
 var posts = require('./routes/posts');
+var facts = require('./routes/facts');
 
 var app = express();
 
@@ -36,6 +37,8 @@ app.use('/users', users);
 app.use('/statues', statues);
 
 app.use('/posts', posts);
+
+app.use('/facts', facts);
 
 app.get('/test', function(req, res,next){
 	db.sequelize.authenticate()
