@@ -14,20 +14,24 @@ module.exports = (sequelize, DataTypes) => {
     title: DataTypes.STRING,
     location: DataTypes.STRING,
     image_id: DataTypes.INTEGER
-  }, {
+  }, 
+  {
+    underscored: true
+  },
+  {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
       },
       get_by_id: function(id) {
         return Statue.findById(id)
-        .then(result => {
-          console.log("Found Statue:", result);
-          return result
+        .then(statue => {
+          console.log("Found Statue:", statue);
+          return statue;
         })
         .catch(err => {
           console.log("error getting statue by id");
-          return res.status(500).json({error: err.message})
+          return err;
         });
       },
     }

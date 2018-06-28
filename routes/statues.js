@@ -4,12 +4,12 @@
 var express = require('express');
 var router = express.Router();
 var db = require ("../models");
-var User = db.users;
+var Statue = db.statue;
 var VERBOSE = false;
 
 const model_name = "Statue";
 
-route.get('/statues', function(req, res, next) {
+router.get('/', function(req, res, next) {
 	return Statue.findAll()
 	.then(result => {
 		return result;
@@ -20,21 +20,7 @@ route.get('/statues', function(req, res, next) {
 	});
 });
 
-route.get('/statues/v2', function(res,req,next ) {
-	return Statue.findAll({
-		attributes: ['id', 'location', 'title']
-	})
-	.then(result => {
-		console.log('Got v2 statues response')
-		return result;
-	})
-	.catch(err => {
-		console.log("Error getting v2 statues: ", err);
-		return res.status(500).json({error: err.message});
-	});
-});
-
-route.post('/statues', function(req,res,next) {
+router.post('/', function(req,res,next) {
 	const body = req.body;
 
 	const location = body.location;
@@ -85,7 +71,21 @@ route.post('/statues', function(req,res,next) {
 	return statue;
 });
 
-route.post('/statues/:id/comment', function(req, res, next) {
+router.get('/v2', function(res,req,next ) {
+	return Statue.findAll({
+		attributes: ['id', 'location', 'title']
+	})
+	.then(result => {
+		console.log('Got v2 statues response')
+		return result;
+	})
+	.catch(err => {
+		console.log("Error getting v2 statues: ", err);
+		return res.status(500).json({error: err.message});
+	});
+});
+
+router.post('/:id/comment', function(req, res, next) {
 	const body = req.body;
 	const statue_id = req.params.id;
 
@@ -101,7 +101,7 @@ route.post('/statues/:id/comment', function(req, res, next) {
 	return Comment.create_with_model(model_name, statue_id, user_id);
 });
 
-route.post('/statues/:id/like', function(req, res, next) {
+router.post('/:id/like', function(req, res, next) {
 	const body = req.body;
 	const statue_id = req.params.id;
 
@@ -126,3 +126,5 @@ route.post('/statues/:id/like', function(req, res, next) {
 
 	}
 });
+
+module.exports = router;

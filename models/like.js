@@ -5,7 +5,11 @@ module.exports = (sequelize, DataTypes) => {
     user_id: DataTypes.INTEGER,
     model_name: DataTypes.STRING,
     model_id: DataTypes.STRING
-  }, {
+  }, 
+  {
+    underscored: true
+  },
+  {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
@@ -17,13 +21,13 @@ module.exports = (sequelize, DataTypes) => {
             model_id: post_id
           }
         })
-        .then(result => {
-          console.log("Successfully found liked post: ", result);
-          return result;
+        .then(like => {
+          console.log("Successfully found liked post: ", like);
+          return like;
         })
         .catch(err => {
           console.log("Failed to find liked post");
-          return res.status(404).json(error: err.message);
+          return err;
         });
       },
       create_with_model: function(model_name, model_id, user_id) {
@@ -32,13 +36,13 @@ module.exports = (sequelize, DataTypes) => {
           model_name: model_name,
           model_id: model_id
         })
-        .then(result => {
-          console.log("Successfully liked entity:", result);
-          return result;
+        .then(like => {
+          console.log("Successfully liked entity:", like);
+          return like;
         })
         .catch(err => {
           console.log("Failed to like entity");
-          return res.status(500).json(error: err.message);
+          return err.message;
         });
       },
       remove: function(model_name, model_id, user_id) {
@@ -51,11 +55,10 @@ module.exports = (sequelize, DataTypes) => {
         })
         .then(result => {
           console.log("Successfully unliked entity and destroyed row", result);
-          return result;
         })
         .catch(err => {
           console.log("Failed to unlike entity");
-          return res.status(500).json(error: err.message);
+          return err;
         });
       }
     }

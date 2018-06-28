@@ -4,12 +4,12 @@
 var express = require('express');
 var router = express.Router();
 var db = require ("../models");
-var User = db.users;
+var Post = db.post;
 var VERBOSE = false;
 
 const model_name = "Post";
 
-route.get('/posts/:id', function(req, res, next) {
+router.get('/:id', function(req, res, next) {
 	const id = req.params.id;
 
 	if (!id) {
@@ -19,7 +19,7 @@ route.get('/posts/:id', function(req, res, next) {
 	return Posts.get_by_id(id);
 });
 
-router.get('/posts', function(req, res, next) {
+router.get('/', function(req, res, next) {
 	const body = req.body;
 	const query = req.query;
 
@@ -28,10 +28,28 @@ router.get('/posts', function(req, res, next) {
 	const liked = query.liked;
 	const author = query.author;
 
-	const query_params;
+	let query_params;
 
 	if (liked) {
-		query_params.liked = liked
+		let likes = Like.findAll({
+			where: {
+				model_name: model_name,
+				user_id: author
+			}
+		})
+		.then(result => {
+			console.log("got liked posts:", result)
+			return result;
+		})
+		.catch(err => {
+			console.log("failed to get liked posts")
+			return res.status(500).json({error: err.message});
+		});
+
+		query_params.likes = [];
+		likes.forEach(function(el) {
+			query_params.likes.push(el.model_id);
+		});
 	}
 
 	if (author) {
@@ -40,25 +58,26 @@ router.get('/posts', function(req, res, next) {
 
 	if ((typeof limit === 'undefined' || !limit) || 
 			(typeof page === 'undefined' || !page)) {
-
 		return Posts.findAll({
 			where: {
-				...query_params
+				liked: query_params.likes,
+				user_id: query_params.author
 			}
 		})
 		.then(results => {
 			return results;
 		})
-		.catch(err => 
+		.catch(err => {
 			console.log("Error getting all posts: ", err);
 		  res.status(404).json({error: err.message});
-		);
+		});
 	}
 
 	return Posts.findAndCountAll({
 		where: {
-			...query_params
-		}
+			liked: query_params.likes,
+			user_id: query_params.author
+		},
     offset: page * limit,
     limit: limit
   })
@@ -74,7 +93,7 @@ router.get('/posts', function(req, res, next) {
   })
 });
 
-router.post('/posts', function(req, res, next) {
+router.post('/', function(req, res, next) {
 	const body = req.body;
 
 	const file = body.file;
@@ -120,7 +139,7 @@ router.post('/posts', function(req, res, next) {
 	})
 	.catch(err => {
 		console.log("Failed to create image");
-		return res.status(500).json(error: err.message);
+		return res.status(500).json({error: err.message});
 	});
 
 	if (image.status >= 400) {
@@ -132,7 +151,7 @@ router.post('/posts', function(req, res, next) {
 	return post;
 });
 
-route.post('/posts/:id/comment', function(req, res, next) {
+router.post('/:id/comment', function(req, res, next) {
 	const body = req.body;
 	const post_id = req.params.id;
 
@@ -148,7 +167,7 @@ route.post('/posts/:id/comment', function(req, res, next) {
 	return Comment.create_with_model(model_name, post_id, user_id);
 });
 
-route.post('/posts/:id/like', function(req, res, next) {
+router.post('/:id/like', function(req, res, next) {
 	const body = req.body;
 	const post_id = req.params.id;
 
@@ -173,3 +192,5 @@ route.post('/posts/:id/like', function(req, res, next) {
 
 	}
 });
+
+module.exports = router;

@@ -11,7 +11,11 @@ module.exports = (sequelize, DataTypes) => {
     width: DataTypes.INTEGER,
     url: DataTypes.STRING,
     post_id: DataTypes.INTEGER
-  }, {
+  }, 
+  {
+    underscored: true
+  },
+  {
     classMethods: {
       associate: function(models) {
         // associations can be defined here

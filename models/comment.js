@@ -11,7 +11,11 @@ module.exports = (sequelize, DataTypes) => {
     user_id: DataTypes.INTEGER,
     model_name: DataTypes.STRING,
     model_id: DataTypes.INTEGER
-  }, {
+  }, 
+  {
+    underscored: true
+  },
+  {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
@@ -23,13 +27,13 @@ module.exports = (sequelize, DataTypes) => {
           model_name: model_name,
           model_id: model_id,
         })
-        .then(result => {
-          console.log("Successfully created comment: ", result);
-          return result;
+        .then(comment => {
+          console.log("Successfully created comment: ", comment);
+          return comment;
         })
         .catch(err => {
           console.log("Failed to create comment");
-          return res.status(500).json(error: err.message);
+          return err;
         });
       }
     }

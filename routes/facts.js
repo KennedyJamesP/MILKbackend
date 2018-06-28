@@ -4,21 +4,21 @@
 var express = require('express');
 var router = express.Router();
 var db = require ("../models");
-var User = db.users;
+var Fact = db.fact;
 var VERBOSE = false;
 
-route.get('/facts', function(req, res, next) {
+router.get('', function(req, res, next) {
 	return Fact.findAll()
 	.then(result => {
-		return result;
+		res.json({result});
 	})
 	.catch(err => {
 		console.log('failed fetching facts');
-		return res.status(500).json({error: err.message})
+		res.status(500).json({error: err.message})
 	});
 });
 
-route.post('/facts', function(req,res,next) {
+router.post('', function(req,res,next) {
 	const body = req.body;
 
 	const section = body.section;
@@ -33,9 +33,11 @@ route.post('/facts', function(req,res,next) {
 		desc: desc
 	})
 	.then(result => {
-		return result;
+		res.json({result});
 	})
 	.catch(err => {
-		return res.status(500).json({error: err.message});
+		res.status(500).json({error: err.message});
 	});
 });
+
+module.exports = router;

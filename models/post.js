@@ -10,7 +10,11 @@ module.exports = (sequelize, DataTypes) => {
     location: DataTypes.STRING,
     user_id: DataTypes.INTEGER,
     statue_id: DataTypes.INTEGER
-  }, {
+  }, 
+  {
+    underscored: true
+  },
+  {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
@@ -21,24 +25,24 @@ module.exports = (sequelize, DataTypes) => {
           location: location,
           statue_id: statue_id,
         })
-        .then(result => {
-          console.log("Successfully created post: ", result);
-          return result;
+        .then(post => {
+          console.log("Successfully created post: ", post);
+          return post;
         })
         .catch(err => {
           console.log("Failed to create post");
-          return res.status(500).json(error: err.message);
+          return err;
         });
       },
       get_by_id: function(id) {
         return Post.findById(id)
-        .then(result => {
-          console.log("Found post:", result);
-          return result
+        .then(post => {
+          console.log("Found post:", post);
+          return post;
         })
         .catch(err => {
           console.log("error getting post by id");
-          return res.status(500).json({error: err.message})
+          return err;
         });
       },
       get_statue_post: function(statue_id) {
@@ -49,12 +53,13 @@ module.exports = (sequelize, DataTypes) => {
         })
         .then(result => {
           console.log("Found Statue post:", result);
-          return result
+          return result;
         })
         .catch(err => {
           console.log("error getting post by id");
-          return res.status(500).json({error: err.message})
+          return err;
         });
+      }
     }
   });
   
