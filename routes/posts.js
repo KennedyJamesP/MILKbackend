@@ -7,6 +7,10 @@ var db = require ("../models");
 var Post = db.post;
 var VERBOSE = false;
 
+/*
+*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
+*/
+
 const model_name = "Post";
 
 router.get('/:id', function(req, res, next) {

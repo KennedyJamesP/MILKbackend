@@ -24,18 +24,18 @@ module.exports = (sequelize, DataTypes) => {
         return this.findById(id)
         .then(user => {
           console.log("User successfully retrieved from db: "+ JSON.stringify(user));
-          return user
+          return user;
         })
         .catch(err => {
           console.log("Error retrieving user from db:" + JSON.stringify(err));
-          return {error: err, status: 500}
+          return {error: err, status: 500};
         })
       }
     },
     instanceMethods: {
       toJSON: function () {
-        console.log("user to json:", this)
-        var values = Object.assign({}, this);
+        console.log("user to json:", this.get())
+        var values = Object.assign({}, this.get());
 
         delete values.password;
 

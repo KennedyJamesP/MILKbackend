@@ -7,6 +7,10 @@ var db = require ("../models");
 var Fact = db.fact;
 var VERBOSE = false;
 
+/*
+*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
+*/
+
 router.get('', function(req, res, next) {
 	return Fact.findAll()
 	.then(result => {

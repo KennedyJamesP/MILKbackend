@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         })
         .catch(err => {
           console.log("Failed to find liked post");
-          return err;
+          return {error: err, status: 500};
         });
       },
       create_with_model: function(model_name, model_id, user_id) {
@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
         })
         .catch(err => {
           console.log("Failed to like entity");
-          return err.message;
+          return {error: err, status: 500};
         });
       },
       remove: function(model_name, model_id, user_id) {
@@ -55,10 +55,11 @@ module.exports = (sequelize, DataTypes) => {
         })
         .then(result => {
           console.log("Successfully unliked entity and destroyed row", result);
+          return result;
         })
         .catch(err => {
           console.log("Failed to unlike entity");
-          return err;
+          return {error: err, status: 500};
         });
       }
     }

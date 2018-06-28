@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         // associations can be defined here
       },
       perform_create: function(user_id, location, statue_id) {
-        let post = Post.create({
+        let post = this.create({
           user_id: user_id,
           location: location,
           statue_id: statue_id,
@@ -31,22 +31,22 @@ module.exports = (sequelize, DataTypes) => {
         })
         .catch(err => {
           console.log("Failed to create post");
-          return err;
+          return {error: err, status: 500};
         });
       },
       get_by_id: function(id) {
-        return Post.findById(id)
+        return this.findById(id)
         .then(post => {
           console.log("Found post:", post);
           return post;
         })
         .catch(err => {
           console.log("error getting post by id");
-          return err;
+          return {error: err, status: 500};
         });
       },
       get_statue_post: function(statue_id) {
-        return Post.findOne({
+        return this.findOne({
           where: {
             statue_id: statue_id
           }
@@ -57,7 +57,7 @@ module.exports = (sequelize, DataTypes) => {
         })
         .catch(err => {
           console.log("error getting post by id");
-          return err;
+          return {error: err, status: 500};
         });
       }
     }

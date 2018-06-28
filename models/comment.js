@@ -33,7 +33,7 @@ module.exports = (sequelize, DataTypes) => {
         })
         .catch(err => {
           console.log("Failed to create comment");
-          return err;
+          return {error: err, status: 500};
         });
       }
     }

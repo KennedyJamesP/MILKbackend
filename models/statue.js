@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         })
         .catch(err => {
           console.log("error getting statue by id");
-          return err;
+          return {error: err, status: 500};
         });
       },
     }
