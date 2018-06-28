@@ -11,10 +11,12 @@ var VERBOSE = false;
 *	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
 */
 
-router.get('', function(req, res, next) {
+const { body, validationResult } = require('express-validator/check');
+
+router.get('', function(req,res) {
 	return Fact.findAll()
 	.then(result => {
-		res.json({result});
+		res.json(result);
 	})
 	.catch(err => {
 		console.log('failed fetching facts');
@@ -22,26 +24,38 @@ router.get('', function(req, res, next) {
 	});
 });
 
-router.post('', function(req,res,next) {
-	const body = req.body;
+// ---- POST FACT ----
 
-	const section = body.section;
-	const desc = body.desc;
+router.post('', [
+		body('section').not().isEmpty().withMessage("Failed to provide a section name"),
+		body('desc').not().isEmpty().withMessage("Please provide a desc"),
+	], function(req,res) {
 
-	if (!section || !desc) {
-		return res.status(400).json({error: "failed to send section and desc"});
-	}
+		//check form validation before consuming the request
+		const errors = validationResult(req);
+	  if (!errors.isEmpty()) {
+	  	let errorObj = {};
+	  	errors.array().forEach(function(err) {
+	  		errorObj[err.param] = err.msg;
+	  	})
+	    return res.status(422).json({error:errorObj});
+	  }
 
-	return Fact.create({
-		section: section,
-		desc: desc
-	})
-	.then(result => {
-		res.json({result});
-	})
-	.catch(err => {
-		res.status(500).json({error: err.message});
-	});
+		const body = req.body;
+
+		const section = body.section;
+		const desc = body.desc;
+
+		return Fact.create({
+			section: section,
+			desc: desc
+		})
+		.then(fact => {
+			res.json(fact);
+		})
+		.catch(err => {
+			res.status(500).json({error: err.message});
+		});
 });
 
 module.exports = router;

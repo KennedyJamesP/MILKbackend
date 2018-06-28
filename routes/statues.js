@@ -42,7 +42,11 @@ router.post('', [
 		//check form validation before consuming the request
 		const errors = validationResult(req);
 	  if (!errors.isEmpty()) {
-	    return res.status(422).json({ errors: errors.array() });
+	    let errorObj = {};
+	  	errors.array().forEach(function(err) {
+	  		errorObj[err.param] = err.msg;
+	  	})
+	    return res.status(422).json({error:errorObj});
 	  }
 	
 		const body = req.body;

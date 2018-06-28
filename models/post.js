@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
       get_by_id: function(id) {
         return this.findById(id)
         .then(post => {
+          if(post === null) {
+            return {error: "post was not found", status: 404} 
+          }
+
           console.log("Found post:", post);
           return post;
         })
@@ -51,9 +55,13 @@ module.exports = (sequelize, DataTypes) => {
             statue_id: statue_id
           }
         })
-        .then(result => {
+        .then(post => {
+          if(post === null) {
+            return {error: "post was not found", status: 404} 
+          }
+
           console.log("Found Statue post:", result);
-          return result;
+          return post;
         })
         .catch(err => {
           console.log("error getting post by id");
