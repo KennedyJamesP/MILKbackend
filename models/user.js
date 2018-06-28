@@ -19,6 +19,27 @@ module.exports = (sequelize, DataTypes) => {
     classMethods: {
       associate: function(models) {
         // associations can be defined here
+      },
+      get_user_by_id: function(id) {
+        return this.findById(id)
+        .then(user => {
+          console.log("User successfully retrieved from db: "+ JSON.stringify(user));
+          return user
+        })
+        .catch(err => {
+          console.log("Error retrieving user from db:" + JSON.stringify(err));
+          return {error: err, status: 500}
+        })
+      }
+    },
+    instanceMethods: {
+      toJSON: function () {
+        console.log("user to json:", this)
+        var values = Object.assign({}, this);
+
+        delete values.password;
+
+        return values;
       }
     }
   });

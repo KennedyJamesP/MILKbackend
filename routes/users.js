@@ -1,7 +1,3 @@
-/*
-* Author: James Kennedy jpkennedyiv@gmail.com
-*/
-
 //For form validation should use
 //https://www.npmjs.com/package/express-validator
 
@@ -11,28 +7,45 @@ var db = require ("../models");
 var User = db.user;
 var VERBOSE = false;
 
-/**	
-	This HTTP POST function creates a new user entry in the users table with the 
-* name and email arguments provided in the request.
-*
-* endpoint: /api/users/signup
-* http method type: POST
-* Arguments: new user's username, password and email must be sent in the body of the request as JSON:
-* request.body: {username: "Jimmy123", email: "jimmy's email", password:"jimmys pwd"}
+const { body, validationResult } = require('express-validator/check');
 
-* Returns: if successful, a response is sent with status code 200 containing the 
-	JSON encoded object with the created user's username, email and assigned unique id,
-	 accessible as the "data" member of the response body:
-*	response.body:	{data: {username: "Jimmy123", id: 123, email:...},  ...}	
-**/
-router.post('/signup', function(req, res, next) {
+
+/*
+*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
+*/
+
+router.post('/signup', [
+	//check POST BODY fields
+	body('email').custom(email => {
+	  return User.findOne({where: {email: email}}).then(user => {
+	    if (user) {
+	      return Promise.reject('E-mail already in use');
+	    }
+	  });
+	}).isEmail().withMessage('must provide a valid email'),
+  body('username').custom(username => {
+	  return User.findOne({where: {username: username}}).then(user => {
+	    if (user) {
+	      return Promise.reject('Username already in use');
+	    }
+	  });
+	}).isLength({ min: 5 }).withMessage('must be at least 5 characters long'),
+  body('password').isLength({ min: 5 }).withMessage('must be at least 5 characters long')
+], function(req, res) {
+
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
 	const body = req.body;
 
 	const email = body.email;
 	const username = body.username;
 	const password = body.password;
 
-	/* insert new entry into users table */
+	//create user 
 	User.create({
 		username: username,
 		email: email, 
@@ -44,11 +57,13 @@ router.post('/signup', function(req, res, next) {
     }
 	})
   .then(user => { 
-		console.log("USERS.JS: New User inserted:", user);
-			//TODO: decide wether to keep req.session
-			//req.session.user_id = new_entry.id;
-			//req.session.user_name = new_entry.username;
-		res.json({user});
+
+  	//Session is undefined...
+		//req.session.user_id = user.id
+
+		//use user.toJSON() to remove password in user response 
+		//see important note at top about inst methods not working
+		res.json(user);
 	})
 	.catch( err => {
   	console.log("USERS.JS->/new): Error creating new user:", err.message );
@@ -81,26 +96,28 @@ router.post('/signup', function(req, res, next) {
   });
 });
 
-/**	
-	This HTTP POST function logs a user in with the 
-* email and password arguments provided in the request.
-*
-* Arguments: existing user's password and email must be sent in
-* 	the body of the request as JSON:
-*		{email: "new user's email", password:"secret"}
 
-* Returns: if successful, a response is sent with status code 200 containing the 
-	JSON encoded object with the created user's name and assigned unique id,
-	 accessible as the "data" member of the response body:
-*		{data: {id: 123, username: "NEW USERS NAME", ...} }	
-**/
 
-router.post('/signin', function(req, res, next) {
+router.post('/signin', [
+		//validate signin fields
+		body('email').not().isEmpty().withMessage("Please provide an email"),
+		body('password').not().isEmpty().withMessage("Please provide a password"),
+	],function(req, res) {
+
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
 	const body = req.body;
 
 	const email = body.email;
 	const password = body.password;
 
+	//This is broken....
+	//see important note at top about inst methods not working
+	//User.get_user_by_id(id);
 	User.findOne({
 		where: {
 			email: email,
@@ -114,12 +131,13 @@ router.post('/signin', function(req, res, next) {
 			});
 		}
 
-		//TODO: set session to store userID
-		//req.session.user_id = user.id;
-		//req.session.user_name = user.username;
-		//console.log("session saved: " + JSON.stringify(req.session));
+		//Session is undefined...
+		//req.session.user_id = user.id
 
-		res.json({user});
+		//use user.toJSON() to remove password in user response 
+		//see important note at top about inst methods not working
+
+		res.json(user);
 	})
 	.catch(err => {
 		console.log("Error logging user in: ", err);
@@ -127,7 +145,8 @@ router.post('/signin', function(req, res, next) {
 	});
 });
 
-//Created By: Noah Davidson 
+
+
 router.get("/:id", (req, res, next) =>{
 	var id = req.params.id;
 
@@ -135,9 +154,10 @@ router.get("/:id", (req, res, next) =>{
 		return res.status(400).json({error: "incorrect id provided"});
 	}
 
+	
+	//see important note at top about inst methods not working
 	//This is broken....
 	//User.get_user_by_id(id);
-
 	User.findById(id)
   .then(user => {
 
@@ -148,7 +168,11 @@ router.get("/:id", (req, res, next) =>{
 		}
 
     console.log("User successfully retrieved from db: "+ JSON.stringify(user));
-    res.json({user})
+
+    //use user.toJSON() to remove password in user response 
+		//see important note at top about inst methods not working
+
+    res.json(user)
   })
   .catch(err => {
     console.log("Error retrieving user from db:" + JSON.stringify(err));
@@ -158,6 +182,7 @@ router.get("/:id", (req, res, next) =>{
 
 router.post("/signout", (req, res, next) => {
 	console.log("serving /users/signout request");
+
 	/* TODO: Destroy the current session */
 	//if (req.session) {
 	//	req.session.destroy();
@@ -166,3 +191,4 @@ router.post("/signout", (req, res, next) => {
 })
 
 module.exports = router;
+
