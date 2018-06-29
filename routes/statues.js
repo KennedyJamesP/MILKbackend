@@ -5,59 +5,47 @@ var express = require('express');
 var router = express.Router();
 var db = require ("../models");
 var Statue = db.statue;
+var Post = db.post;
+var Comment = db.comment;
+var Like = db.like;
+var Image = db.image;
 var VERBOSE = false;
 
 const { body, validationResult } = require('express-validator/check');
-//const errorResponse = require('../utils/errorResponse');
-/*
-*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
-*/
+const { asyncMiddleware } = require('./middleware');
 
 const model_name = "Statue";
 
 // ---- GET STATUE ----
 
-router.get('', function(req,res) {
-	Statue.findAll()
-	.then(statue => {
-		if (statue === null) {
-			return res.status(401).json({
-				error: "Statues array is null"
-			});
-		}
+router.get('', asyncMiddleware(async (req, res, next) => {
+	const statues = await Statue.findAll();
 
-		res.json(statue);
-	})
-	.catch(err => {
-		console.log("Error getting statues: ", err);
-		res.status(500).json({error: err.message});
-	});
-});
+	res.json(statues);
+}));
 
 // ---- GET STATUE V2 ----
 
-router.get('/v2', function(req,res,next) {
-	Statue.findAll({
+router.get('/v2', asyncMiddleware(async (req, res, next) => {
+	const statues = await Statue.findAll({
 		attributes: ['id', 'location', 'title']
-	})
-	.then(statues => {
-		console.log('Got v2 statues response:', JSON.stringify(statues))
-		res.json(statues);
-	})
-	.catch(err => {
-		console.log("Error getting v2 statues: ", err);
-		res.status(500).json({error: err.message});
 	});
-});
+	
+	console.log('Got v2 statues response')
+	res.json(statues);
+}));
 
 // ---- POST STATUE ----
+
+//TODO add in image_id
 
 router.post('', [
 		//validate statue fields
 		body('location').not().isEmpty().withMessage("Please provide location"),
 		body('title').not().isEmpty().withMessage("Please provide a title"),
-		body('artist_name').not().isEmpty().withMessage("Please provide the artist's name"),
-	],function(req,res,next) {
+		body('artist_name').not().isEmpty().withMessage("Please provide the artist's name")
+
+	], asyncMiddleware(async (req, res, next) => {
 
 		//check form validation before consuming the request
 		const errors = validationResult(req);
@@ -68,128 +56,96 @@ router.post('', [
 	  	})
 	    return res.status(422).json({ error:errorObj});
 	  }
-	
+
+		const user_id = req.session.user_id;
+
 		const body = req.body;
+		const {location, title, statue_desc, artist_desc, artist_name, artist_url} = body;
 
-		const location = body.location;
-		const title = body.title;
-		const statue_desc = body.statue_desc;
-		const artist_desc = body.artist_desc;
-		const artist_name = body.artist_name;
-		const artist_url = body.artist_url;
-
-		console.log("--Printing body of statue request: ",location,
-								title,
-								statue_desc,
-								artist_desc,
-								artist_name,
-								artist_url );
-
-		let statue = Statue.create({
+		const statue = await Statue.create({
 			location: location,
 			title: title,
 			statue_desc: statue_desc,
 			artist_desc: artist_desc,
 			artist_name: artist_name,
-			artist_url: artist_url
-			//image_id: null
-		})
-		.then(statue => {
-			console.log("--STATUE CREATED")
-			return statue;
-		})
-		.catch(err => {
-			return {status: 500, error: 'Failed to create a statue'}
-		});	
-		statue = statue.get();
-		console.log("RETURNED STATUE: ", statue)
-
-		if (statue.error) {
-			console.log('Failed to create statue')
-			return res.status(statue.status).json({error: statue.error});
-		}
-
+			artist_url: artist_url,
+			image_id: null
+		});
+		
 		//TODO - create statue image
+		
+		const post = await Post.create({
+      user_id: user_id,
+      location: statue.get('location'),
+      statue_id: statue.get('id'),
+    });
 
-		//pass statue to next state
-		res.locals.statue = statue;
-		next();
-
-	}, function(req,res,next) {
-
-		const statue = res.locals.statue;
-
-		let post = Post.perform_create(user_id, statue.location, statue.id);
-
-		if (post.error) {
-			console.log('Failed to create post')
-			res.status(post.status).json({error: post.error});
-		}
-
-		console.log("--created post: ",  JSON.stringify(post))
 		//Todo serialize all statue data 
 		//for now...
 
 		res.json(statue);
-});
+}));
 
-router.post('/:id/comment', function(req, res, next) {
+router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
+
+	const user_id = req.session.user_id;
 	const body = req.body;
 	const statue_id = req.params.id;
-
 	const text = body.text;
 
-	let statue = Statue.get_by_id(statue_id);
+	const statue = await Statue.findById(statue_id);
 
-	if (statue.error) {
-		return res.status(statue.status).json({error: statue.error});
-	}
-
-	//this is null
-	const user_id = req.session.user_id;
-
-	let comment = Comment.create_with_model(model_name, statue_id, user_id);
-
-	if (comment.error) {
-		return res.status(statue.status).json({error: statue.error});
-	}
+	const comment = await Comment.create({
+    text: text,
+    user_id: user_id,
+    model_name: model_name,
+    model_id: statue_id,
+  });
 
 	return res.json(comment);
-});
+}));
 
-router.post('/:id/like', function(req, res, next) {
-	const body = req.body;
-	const statue_id = req.params.id;
+router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
 
-	const is_liked = body.is_liked;
-
-	const statue = Statue.get_by_id(statue_id);
-
-	res.local.statue = statue;
-	next();
-
-	}, function(req,res) {
-		const statue = res.local.statue;
+		const body = req.body;
+		const is_liked = body.is_liked;
+		const statue_id = req.params.id;
+		const user_id = req.session.user_id;
 		
-		if (statue.error) {
-			return res.status(statue.status).json({error: statue.error});;
-		}
+		const statue = await Statue.findById(statue_id);
 
-		//NEED TO GET USER_ID FROM SERVER SESSION OR PASS IN IN BODY
-		const like = Like.get_like_by_user(statue_id, user_id);
+		const query = await Like.findOne({
+      where: {
+        user_id: user_id,
+        model_id: statue_id,
+        model_name: model_name
+      }
+    });
 
-		if (like.error) {
-			return res.status(like.status).json({error: like.error});;
-		}
+    console.log('Like Query:', query);
 
 		//create like if not found and user liked statue
-		if (like === null && is_liked === true) {
-			return Like.create_with_model(model_name, statue_id, user_id);
+		if (query === null && is_liked === true) {
+			const like = await Like.create({
+        user_id: user_id,
+        model_name: model_name,
+        model_id: statue_id
+      });
+
+			return res.json(like);
 
 		//delete like if like found and user unliked statue 
-		} else if (like.status !== null && is_liked === false) {
-			return Like.remove(model_name, statue_id, user_id);
+		} else if (query !== null && is_liked === false) {
+			const like = await Like.destroy({
+        where: {
+          user_id: user_id,
+          model_name: model_name,
+          model_id: statue_id
+        }
+      });
+
+      return res.json(like);
 		}
-});
+	}));
 
 module.exports = router;

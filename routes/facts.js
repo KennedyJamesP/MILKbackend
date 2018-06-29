@@ -8,31 +8,21 @@ var Fact = db.fact;
 var VERBOSE = false;
 
 const { body, validationResult } = require('express-validator/check');
-// const errorResponse = require('../utils/errorResponse');
+const { asyncMiddleware } = require('./middleware');
 
+router.get('', asyncMiddleware(async (req, res, next) => {
+	const facts = await Fact.findAll();
 
-/*
-*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
-*/
-
-router.get('', function(req,res) {
-	return Fact.findAll()
-	.then(result => {
-		res.json(result);
-	})
-	.catch(err => {
-		console.log('failed fetching facts');
-		res.status(500).json({error: err.message})
-	});
-});
+	res.json(facts);
+}));
 
 // ---- POST FACT ----
 
 router.post('', [
 		body('section').not().isEmpty().withMessage("Failed to provide a section name"),
 		body('desc').not().isEmpty().withMessage("Please provide a desc"),
-		//body('section_id').not().isEmpty().withMessage("Please provide a section id")
-	], function(req,res) {
+		body('section_id').not().isEmpty().withMessage("Please provide a section id")
+	], asyncMiddleware(async (req, res, next) => {
 
 		//check form validation before consuming the request
 		const errors = validationResult(req);
@@ -45,20 +35,15 @@ router.post('', [
 	  }
 
 		const body = req.body;
+		const { section, section_id, desc } = body;
 
-		const section = body.section;
-		const desc = body.desc;
-
-		return Fact.create({
+		const fact = await Fact.create({
 			section: section,
+			section_id: section_id,
 			desc: desc
-		})
-		.then(fact => {
-			res.json(fact);
-		})
-		.catch(err => {
-			res.status(500).json({error: err.message});
 		});
-});
+		
+		res.json(fact);
+}));
 
 module.exports = router;

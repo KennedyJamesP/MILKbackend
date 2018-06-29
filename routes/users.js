@@ -10,10 +10,6 @@ var VERBOSE = false;
 const { body, param, validationResult } = require('express-validator/check');
 const { asyncMiddleware } = require('./middleware');
 
-/*
-*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
-*/
-
 //----- SIGNUP -----
 
 router.post('/signup', [
@@ -51,7 +47,7 @@ router.post('/signup', [
 		const username = body.username;
 		const password = body.password;
 
-		let user = await User.create({
+		const user = await User.create({
 			username: username,
 			email: email, 
 			password: password
@@ -91,7 +87,7 @@ router.post('/signin', [
 		const email = body.email;
 		const password = body.password;
 
-		let user = await User.findOne({
+		const user = await User.findOne({
 			where: {
 				email: email,
 				password: password,
@@ -113,7 +109,7 @@ router.post('/signin', [
 //----- GET UID -----
 //route is broken if :id is not numbers
 router.get("/:id", [
-		param('id').not().isEmpty().withMessage('user id not provided')
+		param('id').not().isEmpty().withMessage('user id was not provided')
 	], asyncMiddleware(async (req, res, next) => {
 
 	var id = req.params.id;

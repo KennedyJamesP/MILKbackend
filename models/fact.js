@@ -1,21 +1,29 @@
 'use strict';
 
+//Todo add in section_id before pushing to prodution!!!
+
 module.exports = (sequelize, DataTypes) => {
-  var fact = sequelize.define('fact', {
-    section: DataTypes.STRING,
-    //section_id: DataTypes.INTEGER,
-    desc: DataTypes.STRING
+  const fact = sequelize.define('fact', {
+    section: { 
+      type: DataTypes.STRING,
+      allowNull: false, 
+    },
+    section_id: { 
+      type: DataTypes.INTEGER,
+      allowNull: false, 
+    },
+    desc: { 
+      type: DataTypes.STRING,
+      allowNull: false, 
+    }
   }, 
   {
     underscored: true
-  },
-  {
-    classMethods: {
-      associate: function(models) {
-        // associations can be defined here
-      }
-    }
   });
+
+  fact.associate = function(models) {
+    // associations can be defined here
+  }
 
   return fact;
 };

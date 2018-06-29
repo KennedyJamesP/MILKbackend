@@ -5,10 +5,15 @@ var express = require('express');
 var router = express.Router();
 var db = require ("../models");
 var Post = db.post;
+var Comment = db.comment;
+var Like = db.like;
+var Image = db.image;
+
 var VERBOSE = false;
 
-const { body, validationResult } = require('express-validator/check');
-// const errorResponse = require('../utils/errorResponse');
+const { body, param, validationResult } = require('express-validator/check');
+const { asyncMiddleware } = require('./middleware');
+
 /*
 *	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
 */
@@ -17,59 +22,48 @@ const model_name = "Post";
 
 // ---- GET POSTS BY ID ----
 
-router.get('/:id', function(req, res, next) {
+router.get('/:id', [
+		param('id').not().isEmpty().withMessage('post id was not provided')
+	
+	], asyncMiddleware(async (req, res, next) => {
+
 	const id = req.params.id;
 
-	if (!id) {
-    return res.status(400).json({error: "no id provided"});
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    let errorObj = {};
+  	errors.array().forEach(function(err) {
+  		errorObj[err.param] = err.msg;
+  	})
+    return res.status(422).json({error:errorObj});
   }
 
-	const query = Posts.get_by_id(id);
+	const post = await Post.findById(id);
 
-	if (query.error) {
-		return res.status(query.status).json({error: query.error});
-	}
-
-	res.json(query);
-});
+	res.json(post);
+}));
 
 // ---- GET POSTS ----
 
-router.get('', function(req, res, next) {
-
-	const query = req.query;
-
-	const limit = query.limit;
-	const page = query.page;
-	const liked = query.liked;
-	const author = query.author;
+router.get('', asyncMiddleware(async (req, res, next) => {
 
 	const user_id = req.session.user_id;
-
+	const query = req.query;
+	const { limit, page, liked, author } = query;
+	
 	let query_params;
 
 	if (liked) {
-		let likes = Like.findAll({
+		const likes = await Like.findAll({
 			where: {
 				model_name: model_name,
-				user_id: author ? author : user_id
+				user_id: typeof author !== 'undefined' || !author ? author : user_id
 			}
-		})
-		.then(result => {
-			console.log("got liked posts:", result)
-			return result;
-		})
-		.catch(err => {
-			console.log("failed to get liked posts")
-			return {error: err.message, status: 500};
 		});
 
-		if (likes.error) {
-			return res.status(likes.status).json({error: likes.error})
-		}
-
 		query_params.likes = [];
-		likes.forEach(function(el) {
+		likes.dataValues.forEach(function(el) {
 			query_params.likes.push(el.model_id);
 		});
 	}
@@ -81,122 +75,89 @@ router.get('', function(req, res, next) {
 	res.local.query_params = query_params;
 	next();
 
-}, function(req,res,next) {
-
-	const query = req.query;
-
-	const limit = query.limit;
-	const page = query.page;
+}), asyncMiddleware(async (req, res, next) => {
 
 	const query_params = res.local.query_params;
+	const query = req.query;
+	const { limit, page } = query;
 
 	if (limit || page) {
 		next();
 	}
 
+	console.log('--finding all posts')
+
 	if (query_params.author) {
-		return Posts.findAll({
+		const posts = await Post.findAll({
 			where: {
 				user_id: query_params.author
 			}
-		})
-		.then(posts => {
-			res.json(posts);
-		})
-		.catch(err => {
-			console.log("Error getting all posts: ", err);
-		   res.status(500).json({error: err.message});
 		});
+
+		return res.json(posts);
+
 	} else if (query_params.likes) {
-		return Posts.findAll({
+		const posts = await Post.findAll({
 			where: {
 				id: query_params.likes
 			}
-		})
-		.then(posts => {
-			res.json(posts);
-		})
-		.catch(err => {
-			console.log("Error getting all posts: ", err);
-		  res.status(500).json({error: err.message});
 		});
+
+		return res.json(posts);
 	} 
 
-	return Posts.findAll()
-	.then(posts => {
-		res.json(posts);
-	})
-	.catch(err => {
-		console.log("Error getting all posts: ", err);
-	  res.status(500).json({error: err.message});
-	});
+	const posts = await Post.findAll()
+	return res.json(posts);
 	
-}, function(req,res) {
-
-	const query = req.query;
-
-	const limit = query.limit;
-	const page = query.page;
+}), asyncMiddleware(async (req, res, next) => {
 
 	const query_params = res.local.query_params;
+	const query = req.query;
+	const { limit, page } = query;
+
+	console.log('--paginating posts');
 
 	if (query_params.author) {
-		return Posts.findAndCountAll({
+		const posts = await Post.findAndCountAll({
 			where: {
 				user_id: query_params.author
 			},
 			offset: page * limit,
     	limit: limit
 		})
-		.then(posts => {
-			console.log(posts.count);
-    	console.log(posts.rows);
-			res.json(posts);
-		})
-		.catch(err => {
-			console.log("Error getting all posts: ", err);
-		  res.status(404).json({error: err.message});
-		});
+		
+		console.log('PAGINATED POSTS BY AUTHOR: ', posts.count, posts.rows);
+		return res.json(posts);
 	} else if (query_params.likes) {
-		return Posts.findAndCountAll({
+
+		const posts = await Post.findAndCountAll({
 			where: {
 				id: query_params.likes
 			},
 			offset: page * limit,
     	limit: limit
-		})
-		.then(posts => {
-			console.log(posts.count);
-    	console.log(posts.rows);
-			res.json(posts);
-		})
-		.catch(err => {
-			console.log("Error getting all posts: ", err);
-		  res.status(404).json({error: err.message});
 		});
+
+		console.log('PAGINATED POSTS BY LIKES', posts.count, posts.rows)
+		return res.json(posts);
 	}
 
-	return Posts.findAndCountAll({
+	const posts = await Post.findAndCountAll({
 		offset: page * limit,
     limit: limit
-	})
-	.then(posts => {
-		console.log(posts.count);
-  	console.log(posts.rows);
-		res.json(posts);
-	})
-	.catch(err => {
-		console.log("Error getting all posts: ", err);
-	  res.status(404).json({error: err.message});
 	});
-});
+
+	console.log('PAGINATED POSTS: ', posts.count, posts.rows);
+	return res.json(posts);
+}));
 
 // ---- POST A POST ----
 
 router.post('', [
 		body('file').not().exists().withMessage("Failed to provide an image to upload"),
-		body('location').not().isEmpty().withMessage("Please provide location"),
-	],function(req, res, next) {
+		body('location').not().isEmpty().withMessage("Please provide location")
+
+	],asyncMiddleware(async (req, res, next) => {
 
 	//check form validation before consuming the request
 	const errors = validationResult(req);
@@ -208,11 +169,9 @@ router.post('', [
     return res.status(422).json({ error: errorObj });
   }
 
+  const user_id = req.session.user_id;
 	const body = req.body;
-
-	const file = body.file;
-	const location = body.location;
-	const user_id = req.session.user_id;
+	const { file, location } = body;
 
 	//TODO configure aws s3 upload 
 	//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
@@ -228,122 +187,100 @@ router.post('', [
 	//     }
 	//     alert('Successfully uploaded photo.');
 	//   });
-	let post = Post.perform_create(user_id, location, null);
+
+	const post = await Post.create({
+		location: location,
+		user_id: user_id,
+		statue_id: null
+	});
+
+	console.log('created post:', post)
 
 	//pass statue to next state
 	res.locals.post = post;
 	res.locals.image_key = photoKey;
 	next();
 
-}, function(req,res,next) {
+}), asyncMiddleware(async (req, res, next) => {
 
-	const post = res.locals.post;
-	const image_key = res.locals.image_key;
-
-	if (post.error) {
-		return res.status(post.status).json({error: post.error});
-	}
+	const { post, image_key } = res.locals;
 
 	//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
-	let image = Image.create({
+	const image = await Image.create({
 		post_id: post.id,
 		url: "ASK NOAH FOR THE S3 BUCKET URL/" + image_key
-	})
-	.then(result => {
-		console.log("Successfully created image: ", result);
-		return result;
-	})
-	.catch(err => {
-		console.log("Failed to create image");
-		return {status: 500, error: err.message};
 	});
-
-	if (image.error) {
-		return res.status(image.status).json({error: image.error});
-	}
 
 	//TODO Serialize post w/ Comments, Likes, Images
 	//For now...
+
 	return res.json(post);
-});
+}));
 
 // ---- POST A COMMENT ----
 
-router.post('/:id/comment', function(req, res, next) {
+router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
+
+	const user_id = req.session.user_id;
 	const body = req.body;
 	const post_id = req.params.id;
-
 	const text = body.text;
 
-	let post = Post.get_by_id(post_id);
+	const post = await Post.findById(statue_id);
 
-	if (post.error) {
-		return res.status(image.status).json({error: image.error});
-	}
+	const comment = await Comment.create({
+    text: text,
+    user_id: user_id,
+    model_name: model_name,
+    model_id: post_id,
+  });
 
-	//NEED TO GET USER_ID FROM SERVER SESSION OR PASS IN IN BODY
-	let comment = Comment.create_with_model(model_name, post_id, user_id);
-
-	if (comment.error) {
-		return res.status(comment.status).json({error: comment.error});
-	}
-
-	res.json(comment);
-});
+	return res.json(comment);
+}));
 
 // ---- LIKE A POST ----
 
-router.post('/:id/like', function(req, res, next) {
+router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 
 		const body = req.body;
-		const post_id = req.params.id;
 		const is_liked = body.is_liked;
-
-		const post = Post.get_by_id(post_id);
-
-		if (post.error) {
-			return res.status(post.status).json({error: post.error})
-		}
-
-		res.local.post = post;
-		next();
-
-	}, function(req,res,next) {
-
 		const post_id = req.params.id;
 		const user_id = req.session.user_id;
 
-		const like = Like.get_like_by_user(post_id, user_id);
+		const post = await Post.findById(post_id);
 
-		res.local.like = like;
-		next();
+		const query = await Like.findOne({
+      where: {
+        user_id: user_id,
+        model_id: post_id,
+        model_name: model_name
+      }
+    });
 
-	}, function(req,res,next) {
-		const like = res.local.like;
+		console.log('Like Query:', query);
 
-		if (like.error) {
-			return res.status(like.status).json({error: like.error})
+		//create like if not found and user liked statue
+		if (query === null && is_liked === true) {
+			const like = await Like.create({
+        user_id: user_id,
+        model_name: model_name,
+        model_id: post_id
+      });
+
+			return res.json(like);
+
+		//delete like if like found and user unliked statue 
+		} else if (query !== null && is_liked === false) {
+			const like = await Like.destroy({
+        where: {
+          user_id: user_id,
+          model_name: model_name,
+          model_id: post_id
+        }
+      });
+
+      return res.json(like);
 		}
-
-		//create like if not found and user liked post
-		if (like === null && is_liked === true) {
-			const newLike = Like.create_with_model(model_name, post_id, user_id);
-			if (newLike.error) {
-				return res.status(newLike.status).json({error: newLike.error});
-			}
-
-			return res.json(newLike)
-
-		//delete like if like found and user unliked post 
-		} else if (like !== null && is_liked === false) {
-			const delteLike = Like.remove(model_name, post_id, user_id);
-
-			if (delteLike.error) {
-				return res.status(delteLike.status).json({error: delteLike.error});
-			}
-
-			return res.json(delteLike)
-		}
-});
+	}));
 
 module.exports = router;
