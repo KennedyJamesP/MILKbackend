@@ -60,7 +60,7 @@ router.post('', [
 		const user_id = req.session.user_id;
 
 		const body = req.body;
-		const {location, title, statue_desc, artist_desc, artist_name, artist_url} = body;
+		const {location, title, statue_desc, artist_desc, artist_name, artist_url} = body || {};
 
 		const statue = await Statue.create({
 			location: location,
@@ -73,6 +73,7 @@ router.post('', [
 		});
 		
 		//TODO - create statue image
+		console.log('user_id', user_id)
 		
 		const post = await Post.create({
       user_id: user_id,
@@ -89,7 +90,7 @@ router.post('', [
 router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
 
 	const user_id = req.session.user_id;
-	const body = req.body;
+	const body = req.body || {};
 	const statue_id = req.params.id;
 	const text = body.text;
 
@@ -125,7 +126,7 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
     console.log('Like Query:', query);
 
 		//create like if not found and user liked statue
-		if (query === null && is_liked === true) {
+		if (query == null && is_liked === true) {
 			const like = await Like.create({
         user_id: user_id,
         model_name: model_name,
@@ -135,7 +136,7 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
 			return res.json(like);
 
 		//delete like if like found and user unliked statue 
-		} else if (query !== null && is_liked === false) {
+		} else if (query != null && is_liked === false) {
 			const like = await Like.destroy({
         where: {
           user_id: user_id,

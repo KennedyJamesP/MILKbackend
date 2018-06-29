@@ -1,11 +1,4 @@
-//add babel to project
-
-/*____ ATTENTION ____
-*
-* This file only supports ES5 syntax
-* DO NOT use ES6 in this file
-*
-*/ 
+//babel plugin / not working 
 require("babel-core/register");
 
 var express = require('express');

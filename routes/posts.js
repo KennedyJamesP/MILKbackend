@@ -51,90 +51,106 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	const user_id = req.session.user_id;
 	const query = req.query;
 	const { limit, page, liked, author } = query;
-	
-	let query_params;
 
-	if (liked) {
+	let query_params = {};
+
+	if (liked != null) {
 		const likes = await Like.findAll({
 			where: {
 				model_name: model_name,
-				user_id: typeof author !== 'undefined' || !author ? author : user_id
+				user_id: author != null ? author : user_id
 			}
 		});
 
-		query_params.likes = [];
-		likes.dataValues.forEach(function(el) {
-			query_params.likes.push(el.model_id);
-		});
+		if (likes.dataValues == null) {
+			return res.json(likes);
+		}else {
+			query_params.likes = [];
+			likes.dataValues.forEach(function(el) {
+				query_params.likes.push(el.model_id);
+			});
+		}
+		console.log('--formatted liked post ids:', query_params.likes)
 	}
 
-	if (author) {
+	if (author != null) {
 		query_params.author = author
 	}
 
-	res.local.query_params = query_params;
+	res.locals.query_params = query_params;
 	next();
 
 }), asyncMiddleware(async (req, res, next) => {
-
-	const query_params = res.local.query_params;
+	console.log('--made it to next', res.locals, res.locals.query_params)
+	if (res.locals.query_params) {
+        console.log(res.locals.query_params);
+    }
+	const query_params = res.locals.query_params;
 	const query = req.query;
 	const { limit, page } = query;
 
-	if (limit || page) {
+	if (limit == null && page == null) {
+		console.log('--finding all posts');
+
+		if (query_params.author != null) {
+			console.log('author')
+			const posts = await Post.findAll({
+				where: {
+					user_id: query_params.author
+				}
+			});
+
+			return res.json(posts);
+
+		} else if (query_params.likes != null) {
+			console.log('likes')
+			const posts = await Post.findAll({
+				where: {
+					id: query_params.likes
+				}
+			});
+
+			return res.json(posts);
+		} 
+
+		console.log('findaALl');
+		const posts = await Post.findAll();
+		return res.json(posts);
+
+	} else {
+		console.log('--next')
 		next();
+
 	}
-
-	console.log('--finding all posts')
-
-	if (query_params.author) {
-		const posts = await Post.findAll({
-			where: {
-				user_id: query_params.author
-			}
-		});
-
-		return res.json(posts);
-
-	} else if (query_params.likes) {
-		const posts = await Post.findAll({
-			where: {
-				id: query_params.likes
-			}
-		});
-
-		return res.json(posts);
-	} 
-
-	const posts = await Post.findAll()
-	return res.json(posts);
-	
 }), asyncMiddleware(async (req, res, next) => {
 
-	const query_params = res.local.query_params;
+	const query_params = res.locals.query_params;
 	const query = req.query;
 	const { limit, page } = query;
 
-	console.log('--paginating posts');
+	console.log('--paginating posts w/ query_params', query_params);
 
-	if (query_params.author) {
+	const offset = page > 1 ? (page - 1) * limit : 0;
+
+	if (query_params.author != null) {
+		console.log('author')
 		const posts = await Post.findAndCountAll({
 			where: {
 				user_id: query_params.author
 			},
-			offset: page * limit,
+			offset: offset,
     	limit: limit
 		})
 		
 		console.log('PAGINATED POSTS BY AUTHOR: ', posts.count, posts.rows);
 		return res.json(posts);
-	} else if (query_params.likes) {
-
+	} else if (query_params.likes != null) {
+		console.log('likes')
 		const posts = await Post.findAndCountAll({
 			where: {
 				id: query_params.likes
 			},
-			offset: page * limit,
+			offset: offset,
     	limit: limit
 		});
 
@@ -142,8 +158,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 		return res.json(posts);
 	}
 
+	console.log('findAndCountAll')
 	const posts = await Post.findAndCountAll({
-		offset: page * limit,
+		offset: offset,
     limit: limit
 	});
 
@@ -260,7 +277,7 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 		console.log('Like Query:', query);
 
 		//create like if not found and user liked statue
-		if (query === null && is_liked === true) {
+		if (query == null && is_liked === true) {
 			const like = await Like.create({
         user_id: user_id,
         model_name: model_name,
@@ -270,7 +287,7 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 			return res.json(like);
 
 		//delete like if like found and user unliked statue 
-		} else if (query !== null && is_liked === false) {
+		} else if (query != null && is_liked === false) {
 			const like = await Like.destroy({
         where: {
           user_id: user_id,
