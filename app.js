@@ -16,12 +16,20 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var db = require('./models');
 
+var session = require('express-session');
+
 var users = require('./routes/users');
 var statues = require('./routes/statues');
 var posts = require('./routes/posts');
 var facts = require('./routes/facts');
 
 var app = express();
+
+app.use(session({
+  secret: 'milk_auth_milk',
+  resave: false,
+  saveUninitialized: true
+}));
 
 app.use(logger('dev'));
 app.use(bodyParser.json());

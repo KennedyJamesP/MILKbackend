@@ -1,5 +1,7 @@
 'use strict';
 
+//NEW SHIT http://docs.sequelizejs.com/manual/tutorial/upgrade-to-v4.html
+
 var fs        = require('fs');
 var path      = require('path');
 var Sequelize = require('sequelize');
