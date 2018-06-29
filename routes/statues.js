@@ -8,14 +8,16 @@ var Statue = db.statue;
 var VERBOSE = false;
 
 const { body, validationResult } = require('express-validator/check');
-
+//const errorResponse = require('../utils/errorResponse');
 /*
 *	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
 */
 
 const model_name = "Statue";
 
-router.get('', function(req, res) {
+// ---- GET STATUE ----
+
+router.get('', function(req,res) {
 	Statue.findAll()
 	.then(statue => {
 		if (statue === null) {
@@ -32,6 +34,24 @@ router.get('', function(req, res) {
 	});
 });
 
+// ---- GET STATUE V2 ----
+
+router.get('/v2', function(req,res,next) {
+	Statue.findAll({
+		attributes: ['id', 'location', 'title']
+	})
+	.then(statues => {
+		console.log('Got v2 statues response:', JSON.stringify(statues))
+		res.json(statues);
+	})
+	.catch(err => {
+		console.log("Error getting v2 statues: ", err);
+		res.status(500).json({error: err.message});
+	});
+});
+
+// ---- POST STATUE ----
+
 router.post('', [
 		//validate statue fields
 		body('location').not().isEmpty().withMessage("Please provide location"),
@@ -46,7 +66,7 @@ router.post('', [
 	  	errors.array().forEach(function(err) {
 	  		errorObj[err.param] = err.msg;
 	  	})
-	    return res.status(422).json({error:errorObj});
+	    return res.status(422).json({ error:errorObj});
 	  }
 	
 		const body = req.body;
@@ -58,6 +78,13 @@ router.post('', [
 		const artist_name = body.artist_name;
 		const artist_url = body.artist_url;
 
+		console.log("--Printing body of statue request: ",location,
+								title,
+								statue_desc,
+								artist_desc,
+								artist_name,
+								artist_url );
+
 		let statue = Statue.create({
 			location: location,
 			title: title,
@@ -65,13 +92,22 @@ router.post('', [
 			artist_desc: artist_desc,
 			artist_name: artist_name,
 			artist_url: artist_url
+			//image_id: null
 		})
 		.then(statue => {
+			console.log("--STATUE CREATED")
 			return statue;
 		})
 		.catch(err => {
 			return {status: 500, error: 'Failed to create a statue'}
 		});	
+		statue = statue.get();
+		console.log("RETURNED STATUE: ", statue)
+
+		if (statue.error) {
+			console.log('Failed to create statue')
+			return res.status(statue.status).json({error: statue.error});
+		}
 
 		//TODO - create statue image
 
@@ -82,12 +118,6 @@ router.post('', [
 	}, function(req,res,next) {
 
 		const statue = res.locals.statue;
-		console.log("STATUE OBJ FROM LOCAL RES", statue)
-
-		if (statue.error) {
-			console.log('Failed to create statue')
-			return res.status(statue.status).json({error: statue.error});
-		}
 
 		let post = Post.perform_create(user_id, statue.location, statue.id);
 
@@ -96,24 +126,11 @@ router.post('', [
 			res.status(post.status).json({error: post.error});
 		}
 
+		console.log("--created post: ",  JSON.stringify(post))
 		//Todo serialize all statue data 
 		//for now...
 
-		return res.json(statue);
-});
-
-router.get('/v2', function(res,req,next ) {
-	return Statue.findAll({
-		attributes: ['id', 'location', 'title']
-	})
-	.then(statue => {
-		console.log('Got v2 statues response')
 		res.json(statue);
-	})
-	.catch(err => {
-		console.log("Error getting v2 statues: ", err);
-		res.status(500).json({error: err.message});
-	});
 });
 
 router.post('/:id/comment', function(req, res, next) {

@@ -8,7 +8,7 @@ var Post = db.post;
 var VERBOSE = false;
 
 const { body, validationResult } = require('express-validator/check');
-
+// const errorResponse = require('../utils/errorResponse');
 /*
 *	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
 */
@@ -201,11 +201,11 @@ router.post('', [
 	//check form validation before consuming the request
 	const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    let errorObj = {};
+  	let errorObj = {};
   	errors.array().forEach(function(err) {
   		errorObj[err.param] = err.msg;
   	})
-  	return res.status(422).json({error:errorObj});
+    return res.status(422).json({ error: errorObj });
   }
 
 	const body = req.body;

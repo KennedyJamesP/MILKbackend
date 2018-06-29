@@ -7,11 +7,13 @@ var db = require ("../models");
 var Fact = db.fact;
 var VERBOSE = false;
 
+const { body, validationResult } = require('express-validator/check');
+// const errorResponse = require('../utils/errorResponse');
+
+
 /*
 *	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
 */
-
-const { body, validationResult } = require('express-validator/check');
 
 router.get('', function(req,res) {
 	return Fact.findAll()
@@ -29,6 +31,7 @@ router.get('', function(req,res) {
 router.post('', [
 		body('section').not().isEmpty().withMessage("Failed to provide a section name"),
 		body('desc').not().isEmpty().withMessage("Please provide a desc"),
+		//body('section_id').not().isEmpty().withMessage("Please provide a section id")
 	], function(req,res) {
 
 		//check form validation before consuming the request
@@ -38,7 +41,7 @@ router.post('', [
 	  	errors.array().forEach(function(err) {
 	  		errorObj[err.param] = err.msg;
 	  	})
-	    return res.status(422).json({error:errorObj});
+	    return res.status(422).json({ error: errorObj });
 	  }
 
 		const body = req.body;

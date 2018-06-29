@@ -3,6 +3,7 @@
 module.exports = (sequelize, DataTypes) => {
   var fact = sequelize.define('fact', {
     section: DataTypes.STRING,
+    //section_id: DataTypes.INTEGER,
     desc: DataTypes.STRING
   }, 
   {
