@@ -15,8 +15,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false, 
     },
-    model_name: DataTypes.STRING,
-    model_id: DataTypes.INTEGER
+    model_name: { 
+      type: DataTypes.STRING,
+      allowNull: false, 
+    },
+    model_id: { 
+      type: DataTypes.INTEGER,
+      allowNull: false, 
+    }
   }, 
   {
     underscored: true
@@ -25,6 +31,14 @@ module.exports = (sequelize, DataTypes) => {
   comment.associate = function(models) {
     // associations can be defined here
   };
+
+  comment.prototype.toJSON = function () {
+    var values = Object.assign({}, this.get());
+    
+    delete values.model_name;
+    delete values.model_id;
+    return values;
+  }
 
   return comment;
 };

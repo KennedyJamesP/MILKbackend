@@ -112,7 +112,7 @@ router.get("/:id", [
 		param('id').not().isEmpty().withMessage('user id was not provided')
 	], asyncMiddleware(async (req, res, next) => {
 
-	var id = req.params.id;
+	const id = req.params.id;
 
 	//check form validation before consuming the request
 	const errors = validationResult(req);

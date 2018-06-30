@@ -13,10 +13,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     artist_desc: DataTypes.STRING,
     artist_name: DataTypes.STRING,
-    artist_url: DataTypes.STRING,
+    artist_url: DataTypes.STRING, 
     statue_desc: DataTypes.STRING,
-    location: DataTypes.STRING,
-    image_id: DataTypes.INTEGER
+    location: DataTypes.STRING
   }, 
   {
     underscored: true

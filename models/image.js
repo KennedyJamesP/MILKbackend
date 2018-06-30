@@ -7,7 +7,11 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true
     },
-    post_id: { 
+    model_name: { 
+      type: DataTypes.STRING,
+      allowNull: false, 
+    },
+    model_id: { 
       type: DataTypes.INTEGER,
       allowNull: false, 
     },
@@ -25,6 +29,14 @@ module.exports = (sequelize, DataTypes) => {
   image.associate = function(models) {
     // associations can be defined here
   };
+
+  image.prototype.toJSON = function () {
+    var values = Object.assign({}, this.get());
+    
+    delete values.model_name;
+    delete values.model_id;
+    return values;
+  }
 
   return image;
 };

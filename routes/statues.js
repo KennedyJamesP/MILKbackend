@@ -41,6 +41,9 @@ router.get('/v2', asyncMiddleware(async (req, res, next) => {
 
 router.post('', [
 		//validate statue fields
+
+		//body('file').not().isEmpty().withMessage("Failed to provide a file"), Todo - add this in for production
+		
 		body('location').not().isEmpty().withMessage("Please provide location"),
 		body('title').not().isEmpty().withMessage("Please provide a title"),
 		body('artist_name').not().isEmpty().withMessage("Please provide the artist's name")
@@ -71,21 +74,48 @@ router.post('', [
 			artist_url: artist_url,
 			image_id: null
 		});
-		
-		//TODO - create statue image
-		console.log('user_id', user_id)
-		
-		const post = await Post.create({
-      user_id: user_id,
-      location: statue.get('location'),
-      statue_id: statue.get('id'),
-    });
-
 		//Todo serialize all statue data 
 		//for now...
 
-		res.json(statue);
-}));
+		console.log('created post:', statue)
+
+		//pass statue to next state
+		res.locals.statue = statue;
+		next();
+
+	}), asyncMiddleware(async (req, res, next) => {
+
+		const { file } = req.body;
+		const { statue } = res.locals;
+
+		//TODO configure aws s3 upload 
+		//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
+
+		const photoKey = 'dummy.png';
+		// s3.upload({
+		//     Key: photoKey,
+		//     Body: file,
+		//     ACL: 'public-read'
+		//   }, function(err, data) {
+		//     if (err) {
+		//       return alert('There was an error uploading your photo: ', err.message);
+		//     }
+		//     alert('Successfully uploaded photo.');
+		//   });
+
+		//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
+		const image = await Image.create({
+			url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey,
+			model_name: model_name,
+			model_id: statue.id
+		});
+
+		//TODO Serialize post w/ Comments, Likes, Images
+		//For now...
+
+		return res.json(statue);
+	})
+);
 
 router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
 
@@ -147,6 +177,8 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
 
       return res.json(like);
 		}
+
+		next();
 	}));
 
 module.exports = router;

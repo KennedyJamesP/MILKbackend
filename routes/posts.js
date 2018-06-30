@@ -41,6 +41,8 @@ router.get('/:id', [
 
 	const post = await Post.findById(id);
 
+	//serialize with post, image, comments, likes
+
 	res.json(post);
 }));
 
@@ -54,7 +56,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 
 	let query_params = {};
 
-	if (liked != null) {
+	if (liked != null && liked === true) {
 		const likes = await Like.findAll({
 			where: {
 				model_name: model_name,
@@ -62,12 +64,14 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			}
 		});
 
+		console.log('--likes dataValues',likes, likes.dataValues, typeof likes.dataValues)
+
 		if (likes.dataValues == null) {
 			return res.json(likes);
 		}else {
 			query_params.likes = [];
-			likes.dataValues.forEach(function(el) {
-				query_params.likes.push(el.model_id);
+			likes.forEach(function(el) {
+				query_params.likes.push(el.get('model_id'));
 			});
 		}
 		console.log('--formatted liked post ids:', query_params.likes)
@@ -81,10 +85,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	next();
 
 }), asyncMiddleware(async (req, res, next) => {
-	console.log('--made it to next', res.locals, res.locals.query_params)
-	if (res.locals.query_params) {
-        console.log(res.locals.query_params);
-    }
+
 	const query_params = res.locals.query_params;
 	const query = req.query;
 	const { limit, page } = query;
@@ -118,60 +119,54 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 		return res.json(posts);
 
 	} else {
-		console.log('--next')
 		next();
-
 	}
 }), asyncMiddleware(async (req, res, next) => {
-
+	//if here pagination is a must
 	const query_params = res.locals.query_params;
+	const { author, likes } = res.locals.query_params;
 	const query = req.query;
 	const { limit, page } = query;
 
-	console.log('--paginating posts w/ query_params', query_params);
-
 	const offset = page > 1 ? (page - 1) * limit : 0;
 
-	if (query_params.author != null) {
-		console.log('author')
-		const posts = await Post.findAndCountAll({
+	let posts;
+
+	//author only
+	if (author != null && likes == null) {
+		posts = await Post.findAndCountAll({
 			where: {
-				user_id: query_params.author
-			},
-			offset: offset,
-    	limit: limit
-		})
-		
-		console.log('PAGINATED POSTS BY AUTHOR: ', posts.count, posts.rows);
-		return res.json(posts);
-	} else if (query_params.likes != null) {
-		console.log('likes')
-		const posts = await Post.findAndCountAll({
-			where: {
-				id: query_params.likes
+				user_id: author
 			},
 			offset: offset,
     	limit: limit
 		});
 
-		console.log('PAGINATED POSTS BY LIKES', posts.count, posts.rows)
 		return res.json(posts);
+
+	//if liked
+	} else if (likes != null) {
+			posts = await Post.findAndCountAll({
+			where: {
+				id: query_params.likes
+			},
+			offset: offset,
+	  	limit: limit
+		});
+	} else {
+		posts = await Post.findAndCountAll({
+			offset: offset,
+	  	limit: limit
+		});
 	}
 
-	console.log('findAndCountAll')
-	const posts = await Post.findAndCountAll({
-		offset: offset,
-    limit: limit
-	});
-
-	console.log('PAGINATED POSTS: ', posts.count, posts.rows);
 	return res.json(posts);
 }));
 
 // ---- POST A POST ----
 
 router.post('', [
-		body('file').not().exists().withMessage("Failed to provide an image to upload"),
+		//body('file').not().isEmpty().withMessage("Failed to provide an image to upload"), PUT THIS IN FOR PRODUCTION
 		body('location').not().isEmpty().withMessage("Please provide location")
 
 	],asyncMiddleware(async (req, res, next) => {
@@ -187,8 +182,24 @@ router.post('', [
   }
 
   const user_id = req.session.user_id;
-	const body = req.body;
-	const { file, location } = body;
+	const { location } = req.body;
+
+	const post = await Post.create({
+		location: location,
+		user_id: user_id,
+		statue_id: null
+	});
+
+	console.log('created post:', post)
+
+	//pass statue to next state
+	res.locals.post = post;
+	next();
+
+}), asyncMiddleware(async (req, res, next) => {
+
+	const { file } = req.body;
+	const { post } = res.locals;
 
 	//TODO configure aws s3 upload 
 	//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
@@ -205,27 +216,11 @@ router.post('', [
 	//     alert('Successfully uploaded photo.');
 	//   });
 
-	const post = await Post.create({
-		location: location,
-		user_id: user_id,
-		statue_id: null
-	});
-
-	console.log('created post:', post)
-
-	//pass statue to next state
-	res.locals.post = post;
-	res.locals.image_key = photoKey;
-	next();
-
-}), asyncMiddleware(async (req, res, next) => {
-
-	const { post, image_key } = res.locals;
-
 	//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
 	const image = await Image.create({
-		post_id: post.id,
-		url: "ASK NOAH FOR THE S3 BUCKET URL/" + image_key
+		url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey,
+		model_name: model_name,
+		model_id: post.id
 	});
 
 	//TODO Serialize post w/ Comments, Likes, Images
@@ -237,13 +232,15 @@ router.post('', [
 // ---- POST A COMMENT ----
 
 router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
-
+	console.log('comment', "user",req.session.user_id)
 	const user_id = req.session.user_id;
 	const body = req.body;
 	const post_id = req.params.id;
 	const text = body.text;
 
-	const post = await Post.findById(statue_id);
+	const post = await Post.findById(post_id);
+
+	console.log('post', post)
 
 	const comment = await Comment.create({
     text: text,
@@ -261,20 +258,23 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 
 		const body = req.body;
 		const is_liked = body.is_liked;
+		console.log('--is_liked:',is_liked)
 		const post_id = req.params.id;
 		const user_id = req.session.user_id;
 
 		const post = await Post.findById(post_id);
 
+		console.log('--found post:', user_id, post.get('id'), model_name);
+
 		const query = await Like.findOne({
       where: {
         user_id: user_id,
-        model_id: post_id,
+        model_id: post.get('id'),
         model_name: model_name
       }
     });
 
-		console.log('Like Query:', query);
+		console.log('--like Query:', query);
 
 		//create like if not found and user liked statue
 		if (query == null && is_liked === true) {
@@ -296,8 +296,10 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
         }
       });
 
-      return res.json(like);
+      return res.json({});
 		}
+
+		next();
 	}));
 
 module.exports = router;

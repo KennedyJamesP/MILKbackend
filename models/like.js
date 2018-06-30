@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false, 
     },
     model_id: { 
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false, 
     }
   }, 
@@ -22,6 +22,14 @@ module.exports = (sequelize, DataTypes) => {
   like.associate = function(models) {
     // associations can be defined here
   };
+
+  like.prototype.toJSON = function () {
+    var values = Object.assign({}, this.get());
+    
+    delete values.model_name;
+    delete values.model_id;
+    return values;
+  }
 
   return like;
 };

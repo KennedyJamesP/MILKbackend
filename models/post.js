@@ -11,8 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false, 
     },
-    location: DataTypes.STRING,
-    statue_id: DataTypes.INTEGER
+    location: DataTypes.STRING
   }, 
   {
     underscored: true
