@@ -22,6 +22,7 @@ router.post('', [
 		body('section').not().isEmpty().withMessage("Failed to provide a section name"),
 		body('desc').not().isEmpty().withMessage("Please provide a desc"),
 		body('section_id').not().isEmpty().withMessage("Please provide a section id")
+		
 	], asyncMiddleware(async (req, res, next) => {
 
 		//check form validation before consuming the request

@@ -19,6 +19,9 @@ const model_name = "Statue";
 // ---- GET STATUE ----
 
 router.get('', asyncMiddleware(async (req, res, next) => {
+
+	const user_id = req.session.user_id;
+
 	const statues = await Statue.findAll();
 
 	res.json(statues);
@@ -30,8 +33,7 @@ router.get('/v2', asyncMiddleware(async (req, res, next) => {
 	const statues = await Statue.findAll({
 		attributes: ['id', 'location', 'title']
 	});
-	
-	console.log('Got v2 statues response')
+
 	res.json(statues);
 }));
 
@@ -63,8 +65,9 @@ router.post('', [
 		const user_id = req.session.user_id;
 
 		const body = req.body;
-		const {location, title, statue_desc, artist_desc, artist_name, artist_url} = body || {};
+		const { location, title, statue_desc, artist_desc, artist_name, artist_url } = body || {};
 
+		//create statue
 		const statue = await Statue.create({
 			location: location,
 			title: title,
@@ -74,19 +77,18 @@ router.post('', [
 			artist_url: artist_url,
 			image_id: null
 		});
-		//Todo serialize all statue data 
-		//for now...
-
-		console.log('created post:', statue)
 
 		//pass statue to next state
 		res.locals.statue = statue;
 		next();
 
 	}), asyncMiddleware(async (req, res, next) => {
-
+		const user_id = req.session.user_id;
 		const { file } = req.body;
 		const { statue } = res.locals;
+		const model_id = statue.id;
+
+		console.log('--user_id', user_id, '--file', file, '--statue', statue, '--model_id', model_id);
 
 		//TODO configure aws s3 upload 
 		//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
@@ -102,18 +104,17 @@ router.post('', [
 		//     }
 		//     alert('Successfully uploaded photo.');
 		//   });
-
+		
+		console.log('--before image create')
 		//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
 		const image = await Image.create({
 			url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey,
 			model_name: model_name,
-			model_id: statue.id
+			model_id: model_id
 		});
+		console.log('--after')
 
-		//TODO Serialize post w/ Comments, Likes, Images
-		//For now...
-
-		return res.json(statue);
+		return res.json({statue, image});
 	})
 );
 

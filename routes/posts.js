@@ -32,15 +32,19 @@ router.get('/:id', [
 	//check form validation before consuming the request
 	const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    let errorObj = {};
+  	let errorObj = {};
   	errors.array().forEach(function(err) {
   		errorObj[err.param] = err.msg;
   	})
-    return res.status(422).json({error:errorObj});
+    return res.status(422).json({ error: errorObj });
   }
 
 	const post = await Post.findById(id);
 
+	console.log('--POST RESPONSE,', post.dataValues)
+	console.log('--get comment', post.getComments());
+	console.log('--get image', post.getImages());
+	console.log('--get likes', post.getLikes());
 	//serialize with post, image, comments, likes
 
 	res.json(post);
@@ -64,7 +68,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			}
 		});
 
-		console.log('--likes dataValues',likes, likes.dataValues, typeof likes.dataValues)
+		//console.log('--likes dataValues',likes, likes.dataValues, typeof likes.dataValues)
 
 		if (likes.dataValues == null) {
 			return res.json(likes);
@@ -74,7 +78,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				query_params.likes.push(el.get('model_id'));
 			});
 		}
-		console.log('--formatted liked post ids:', query_params.likes)
+		//console.log('--formatted liked post ids:', query_params.likes)
 	}
 
 	if (author != null) {

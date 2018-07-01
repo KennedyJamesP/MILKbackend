@@ -18,8 +18,10 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   post.associate = function(models) {
-    // associations can be defined here
+    post.hasMany(models.comment);
+    post.hasMany(models.image);
+    post.hasMany(models.like);
   };
-  
+
   return post;
 };

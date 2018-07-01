@@ -29,7 +29,8 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   comment.associate = function(models) {
-    // associations can be defined here
+    // comment.hasOne(models.post, {foreignKey: 'comment'});
+    // comment.hasOne(models.statue, {foreignKey: 'comment'});
   };
 
   comment.prototype.toJSON = function () {

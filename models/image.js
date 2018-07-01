@@ -27,7 +27,8 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   image.associate = function(models) {
-    // associations can be defined here
+    // image.hasOne(models.post, {foreignKey: 'image'});
+    // image.hasOne(models.statue, {foreignKey: 'image'});
   };
 
   image.prototype.toJSON = function () {
