@@ -1,4 +1,7 @@
 {
+  "models": {
+    "underscore": "true"
+  },
   "development": {
     "username": "test",
     "password": "test123",
