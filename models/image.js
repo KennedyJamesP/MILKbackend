@@ -27,19 +27,6 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   image.associate = function(models) {
-    const { post, statue } = models;
-    
-    image.belongsTo(post, {
-      foreignKey: 'model_id',
-      constraints: false,
-      as: 'post'
-    });
-
-    image.belongsTo(statue, {
-      foreignKey: 'model_id',
-      constraints: false,
-      as: 'statue'
-    });
   };
 
   image.prototype.toJSON = function () {

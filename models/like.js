@@ -18,19 +18,9 @@ module.exports = (sequelize, DataTypes) => {
     underscored: true
   });
 
-  like.associate = function(models) {
-    const { post, statue } = models;
-    
-    like.belongsTo(post, {
-      foreignKey: 'model_id',
-      constraints: false,
-      as: 'post'
-    });
-
-    like.belongsTo(statue, {
-      foreignKey: 'model_id',
-      constraints: false,
-      as: 'statue'
+  like.associate = function(models) {    
+    like.belongsTo(models.user, {
+      foreignKey: 'user_id'
     });
   };
 

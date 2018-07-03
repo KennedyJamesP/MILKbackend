@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true
     },
+    statue_id: { 
+      type: DataTypes.INTEGER,
+      allowNull: false, 
+    },
     user_id: { 
       type: DataTypes.INTEGER,
       allowNull: false, 
@@ -45,17 +49,14 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  post.prototype.toJSON = async function () {
+  post.prototype.toJSON =  function () {
+   const post = Object.assign({}, this.get());
 
-    const comments = await this.getComments();
-    const images = await this.getImages();
-    const likes = await this.getLikes();
+    // post.comments = await this.getComments();
+    // post.images = await this.getImages();
+    // post.likes = await this.getLikes();
 
-    const post = Object.assign({}, this.get(), {
-      comments,
-      images,
-      likes
-    });
+    //delete post.user_id;
 
     return (post);
   };

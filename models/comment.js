@@ -28,19 +28,9 @@ module.exports = (sequelize, DataTypes) => {
     underscored: true
   });
 
-  comment.associate = function(models) {
-    const { post, statue } = models;
-    
-    comment.belongsTo(post, {
-      foreignKey: 'model_id',
-      constraints: false,
-      as: 'post'
-    });
-
-    comment.belongsTo(statue, {
-      foreignKey: 'model_id',
-      constraints: false,
-      as: 'statue'
+  comment.associate = function(models) {    
+    comment.belongsTo(models.user, {
+      foreignKey: 'user_id'
     });
   };
 

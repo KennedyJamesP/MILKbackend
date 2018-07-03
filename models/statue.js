@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
   });
   
   statue.associate = function(models) {
-    const { comment, image, like } = models;
+    const { comment, image, like, post } = models;
 
     statue.hasMany(comment, {
       foreignKey: 'model_id',
@@ -47,19 +47,18 @@ module.exports = (sequelize, DataTypes) => {
         model_name: 'statue'
       }
     });
+
+    statue.hasMany(post, {
+      targetKey: 'statue_id'
+    });
   };
 
-  statue.prototype.toJSON = async function () {
+  statue.prototype.toJSON = function () {
+    const statue = Object.assign({}, this.get());
 
-    const comments = await this.getComments();
-    const images = await this.getImages();
-    const likes = await this.getLikes();
-
-    const statue = Object.assign({}, this.get(), {
-      comments,
-      images,
-      likes
-    });
+    // statue.comments = await this.getComments();
+    // statue.images = await this.getImages();
+    // statue.likes = await this.getLikes();
 
     return statue;
   };
