@@ -315,4 +315,28 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 		next();
 	}));
 
+router.delete('/:id', [
+		param('id').not().isEmpty().withMessage('post id was not provided')
+	
+	], asyncMiddleware(async (req, res, next) => {
+
+	const id = req.params.id;
+
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+  	let errorObj = {};
+  	errors.array().forEach(function(err) {
+  		errorObj[err.param] = err.msg;
+  	})
+    return res.status(422).json({ error: errorObj });
+  }
+
+	Post.destroy({where: {
+		id: id
+	}})
+
+	res.json({});
+}));
+
 module.exports = router;
