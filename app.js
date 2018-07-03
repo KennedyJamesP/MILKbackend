@@ -43,7 +43,7 @@ app.get('/test', function(req, res,next){
     .then(() => {
       res.status(200).json({
         message: "server and db connection have been established successfully.",
-        "details": "JPK IS EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARD"
+        "details": "JPK AND ND ARE EXCEPTIONALLY G AND POWERFUL MASTER-CS-WIZARDS"
       });
     })
     .catch(err => {
