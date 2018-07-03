@@ -1,8 +1,9 @@
-/*
-* Author: Noah Davidson
-*/
 var express = require('express');
 var router = express.Router();
+
+const aws = require('../utils/aws');
+const multer = require('multer');
+const upload = multer();
 
 var db = require ("../models");
 var Comment = db.comment;
@@ -10,8 +11,6 @@ var Image = db.image;
 var Like = db.like;
 var Post = db.post;
 var Statue = db.statue;
-var User = db.user;
-
 var VERBOSE = false;
 
 const { body, param, validationResult } = require('express-validator/check');
@@ -26,8 +25,6 @@ router.get('/:id', [
 	
 	], asyncMiddleware(async (req, res, next) => {
 
-	const id = req.params.id;
-
 	//check form validation before consuming the request
 	const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -38,13 +35,15 @@ router.get('/:id', [
     return res.status(422).json({ error: errorObj });
   }
 
+  const id = req.params.id;
+
 	const post = await Post.findById(id, {
-			include: [
-				{model: Comment},
-				{model: Image},
-				{model: Like}
-			]
-		});
+		include: [
+			{model: Comment},
+			{model: Image},
+			{model: Like}
+		]
+	});
 
 	res.json(post);
 }));
@@ -57,7 +56,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	const { limit, page, liked, author } = req.query;
 
 	let query_params = {};
-	console.log('--POST QUERY',req.query, liked == 'true')
+
 	//if GET Liked
 	if (liked == 'true') {
 		const likes = await Like.findAll({
@@ -67,8 +66,6 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			}
 		});
 
-		console.log('--LIKES',likes)
-
 		if (likes == null) {
 			return res.json(likes);
 		}else {
@@ -77,7 +74,6 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				query_params.likes.push(el.get('model_id'));
 			});
 		}
-		console.log('--formatted liked post ids:', query_params.likes)
 	}
 
 	if (author != null) {
@@ -125,7 +121,6 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 		} 
 
 		console.log('findaAll');
-
 		const posts = await Post.findAll({
 			include: [
 				{model: Comment},
@@ -194,8 +189,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 
 // ---- POST A POST ----
 
-router.post('', [
-		//body('file').not().isEmpty().withMessage("Failed to provide an image to upload"), PUT THIS IN FOR PRODUCTION
+router.post('',upload.any(), [
 		body('location').not().isEmpty().withMessage("Please provide location")
 
 	],asyncMiddleware(async (req, res, next) => {
@@ -208,6 +202,10 @@ router.post('', [
   		errorObj[err.param] = err.msg;
   	})
     return res.status(422).json({ error: errorObj });
+  }
+
+  if (req.files == null) {
+  	return res.status(400).json({error: "Post must be uploaded with an image"})
   }
 
   const user_id = req.session.user_id;
@@ -225,28 +223,17 @@ router.post('', [
 
 }), asyncMiddleware(async (req, res, next) => {
 
-	const { file } = req.body;
 	const { post } = res.locals;
-
-	//TODO configure aws s3 upload 
-	//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
-	const photoKey = 'dummy.png';
-	// s3.upload({
-	//     Key: photoKey,
-	//     Body: file,
-	//     ACL: 'public-read'
-	//   }, function(err, data) {
-	//     if (err) {
-	//       return alert('There was an error uploading your photo: ', err.message);
-	//     }
-	//     alert('Successfully uploaded photo.');
-	//   });
-
+	
+  const url = aws.s3ImageUpload(req.files[0].buffer);
+  
 	const image = await post.createImage({
-		url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey
+		url: url
 	});
 
-	res.json(post);
+	//how to merge image and post?
+
+	res.json({post, image});
 }));
 
 // ---- POST A COMMENT ----
@@ -288,7 +275,6 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 
 		//create like if not found and user liked statue
 		if (found == null && is_liked === true) {
-			console.log('--create like')
       const like = await post.createLike({
       	user_id: user_id
       });
@@ -297,7 +283,6 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 
 		//delete like if like found and user unliked statue 
 		} else if (found != null && is_liked === false) {
-			console.log('--remove like')
 			await Like.destroy({
         where: {
           user_id: user_id,

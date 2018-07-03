@@ -1,5 +1,6 @@
 //babel plugin / not working 
 require("babel-core/register");
+require('dotenv').config();
 
 var express = require('express');
 var path = require('path');

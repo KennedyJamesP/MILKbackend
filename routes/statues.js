@@ -1,8 +1,10 @@
-/*
-* Author: Noah Davidson
-*/
 var express = require('express');
 var router = express.Router();
+
+const aws = require('../utils/aws');
+const multer = require('multer');
+const upload = multer();
+
 var db = require ("../models");
 var Comment = db.comment;
 var Image = db.image;
@@ -72,11 +74,9 @@ router.get('/:id', [
 
 // ---- POST STATUE ----
 
-router.post('', [
+router.post('',upload.any(), [
 		//validate statue fields
 
-		//body('file').not().isEmpty().withMessage("Failed to provide a file"), Todo - add this in for production
-		
 		body('location').not().isEmpty().withMessage("Please provide location"),
 		body('title').not().isEmpty().withMessage("Please provide a title"),
 		body('artist_name').not().isEmpty().withMessage("Please provide the artist's name")
@@ -91,6 +91,10 @@ router.post('', [
 	  		errorObj[err.param] = err.msg;
 	  	})
 	    return res.status(422).json({ error:errorObj});
+	  }
+
+	  if (req.files == null) {
+	  	return res.status(400).json({error: "Post must be uploaded with an image"})
 	  }
 
 		const user_id = req.session.user_id;
@@ -112,29 +116,17 @@ router.post('', [
 		next();
 
 	}), asyncMiddleware(async (req, res, next) => {
-		const user_id = req.session.user_id;
-		const { file } = req.body;
 		const { statue } = res.locals;
-
-		//TODO configure aws s3 upload 
-		//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
-		const photoKey = 'dummy.png';
-		// s3.upload({
-		//     Key: photoKey,
-		//     Body: file,
-		//     ACL: 'public-read'
-		//   }, function(err, data) {
-		//     if (err) {
-		//       return alert('There was an error uploading your photo: ', err.message);
-		//     }
-		//     alert('Successfully uploaded photo.');
-		//   });
-
-		const image = await statue.createImage({
-			url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey
+	
+	  const url = aws.s3ImageUpload(req.files[0].buffer);
+	  
+		const image = await post.createImage({
+			url: url
 		});
 
-		return res.json(statue);
+		//how to merge image and post?
+
+		res.json({statue, image});
 	})
 );
 

@@ -1,8 +1,6 @@
-'use strict';
+const { validationResult } = require('express-validator/check');
 
-// //not working //check
-
-module.exports =  {
+module.exports = {
 	validateResonse: function(req) {
 		const errors = validationResult(req);
 
@@ -17,4 +15,4 @@ module.exports =  {
 
 	  return null;
 	}
-};
+}
