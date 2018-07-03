@@ -22,7 +22,46 @@ module.exports = (sequelize, DataTypes) => {
   });
   
   statue.associate = function(models) {
-    // associations can be defined here
+    const { comment, image, like } = models;
+
+    statue.hasMany(comment, {
+      foreignKey: 'model_id',
+      constraints: false,
+      scope: {
+        model_name: 'statue'
+      }
+    });
+
+    statue.hasMany(image, {
+      foreignKey: 'model_id',
+      constraints: false,
+      scope: {
+        model_name: 'statue'
+      }
+    });
+
+    statue.hasMany(like, {
+      foreignKey: 'model_id',
+      constraints: false,
+      scope: {
+        model_name: 'statue'
+      }
+    });
+  };
+
+  statue.prototype.toJSON = async function () {
+
+    const comments = await this.getComments();
+    const images = await this.getImages();
+    const likes = await this.getLikes();
+
+    const statue = Object.assign({}, this.get(), {
+      comments,
+      images,
+      likes
+    });
+
+    return statue;
   };
 
   return statue;

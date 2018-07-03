@@ -18,9 +18,46 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   post.associate = function(models) {
-    post.hasMany(models.comment);
-    post.hasMany(models.image);
-    post.hasMany(models.like);
+    const { comment, image, like } = models;
+
+    post.hasMany(comment, {
+      foreignKey: 'model_id',
+      constraints: false,
+      scope: {
+        model_name: 'post'
+      }
+    });
+
+    post.hasMany(image, {
+      foreignKey: 'model_id',
+      constraints: false,
+      scope: {
+        model_name: 'post'
+      }
+    });
+
+    post.hasMany(like, {
+      foreignKey: 'model_id',
+      constraints: false,
+      scope: {
+        model_name: 'post'
+      }
+    });
+  };
+
+  post.prototype.toJSON = async function () {
+
+    const comments = await this.getComments();
+    const images = await this.getImages();
+    const likes = await this.getLikes();
+
+    const post = Object.assign({}, this.get(), {
+      comments,
+      images,
+      likes
+    });
+
+    return (post);
   };
 
   return post;

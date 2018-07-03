@@ -11,8 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false, 
     },
     model_id: { 
-      type: DataTypes.INTEGER,
-      allowNull: false, 
+      type: DataTypes.INTEGER
     }
   }, 
   {
@@ -20,7 +19,19 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   like.associate = function(models) {
-    // associations can be defined here
+    const { post, statue } = models;
+    
+    like.belongsTo(post, {
+      foreignKey: 'model_id',
+      constraints: false,
+      as: 'post'
+    });
+
+    like.belongsTo(statue, {
+      foreignKey: 'model_id',
+      constraints: false,
+      as: 'statue'
+    });
   };
 
   like.prototype.toJSON = function () {

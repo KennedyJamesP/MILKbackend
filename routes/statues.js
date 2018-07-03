@@ -5,24 +5,25 @@ var express = require('express');
 var router = express.Router();
 var db = require ("../models");
 var Statue = db.statue;
-var Post = db.post;
-var Comment = db.comment;
 var Like = db.like;
-var Image = db.image;
 var VERBOSE = false;
 
-const { body, validationResult } = require('express-validator/check');
+const { body, param, validationResult } = require('express-validator/check');
 const { asyncMiddleware } = require('./middleware');
 
-const model_name = "Statue";
+const model_name = "statue";
 
 // ---- GET STATUE ----
 
 router.get('', asyncMiddleware(async (req, res, next) => {
 
-	const user_id = req.session.user_id;
-
 	const statues = await Statue.findAll();
+
+	//WITHOUT THIS, STATUES IS BROKEN
+	const result = await Promise.all(statues.map(async (statue) => {
+    const content = await statue.toJSON()
+    return content;
+  }));
 
 	res.json(statues);
 }));
@@ -34,7 +35,31 @@ router.get('/v2', asyncMiddleware(async (req, res, next) => {
 		attributes: ['id', 'location', 'title']
 	});
 
+	//THIS IS BROKEN
+
 	res.json(statues);
+}));
+
+router.get('/:id', [
+		param('id').not().isEmpty().withMessage('post id was not provided')
+	
+	], asyncMiddleware(async (req, res, next) => {
+
+	const id = req.params.id;
+
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+  	let errorObj = {};
+  	errors.array().forEach(function(err) {
+  		errorObj[err.param] = err.msg;
+  	})
+    return res.status(422).json({ error: errorObj });
+  }
+
+	const statue = await Statue.findById(id);
+
+	res.json(await statue.toJSON());
 }));
 
 // ---- POST STATUE ----
@@ -63,7 +88,6 @@ router.post('', [
 	  }
 
 		const user_id = req.session.user_id;
-
 		const body = req.body;
 		const { location, title, statue_desc, artist_desc, artist_name, artist_url } = body || {};
 
@@ -86,13 +110,9 @@ router.post('', [
 		const user_id = req.session.user_id;
 		const { file } = req.body;
 		const { statue } = res.locals;
-		const model_id = statue.id;
-
-		console.log('--user_id', user_id, '--file', file, '--statue', statue, '--model_id', model_id);
 
 		//TODO configure aws s3 upload 
 		//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
-
 		const photoKey = 'dummy.png';
 		// s3.upload({
 		//     Key: photoKey,
@@ -104,17 +124,12 @@ router.post('', [
 		//     }
 		//     alert('Successfully uploaded photo.');
 		//   });
-		
-		console.log('--before image create')
-		//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
-		const image = await Image.create({
-			url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey,
-			model_name: model_name,
-			model_id: model_id
-		});
-		console.log('--after')
 
-		return res.json({statue, image});
+		const image = await statue.createImage({
+			url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey
+		});
+
+		return res.json(await statue.toJSON());
 	})
 );
 
@@ -127,11 +142,9 @@ router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
 
 	const statue = await Statue.findById(statue_id);
 
-	const comment = await Comment.create({
+ 	const comment = await statue.createComment({
     text: text,
-    user_id: user_id,
-    model_name: model_name,
-    model_id: statue_id,
+    user_id: user_id
   });
 
 	return res.json(comment);
@@ -146,28 +159,26 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
 		
 		const statue = await Statue.findById(statue_id);
 
-		const query = await Like.findOne({
-      where: {
+		const query = await statue.getLikes({
+  		where: {
         user_id: user_id,
-        model_id: statue_id,
-        model_name: model_name
-      }
-    });
+			}
+  	});
 
-    console.log('Like Query:', query);
+  	const found = query[0];
 
 		//create like if not found and user liked statue
-		if (query == null && is_liked === true) {
-			const like = await Like.create({
-        user_id: user_id,
-        model_name: model_name,
-        model_id: statue_id
+		if (found == null && is_liked === true) {
+			console.log('--create like')
+      const like = await statue.createLike({
+      	user_id: user_id
       });
 
 			return res.json(like);
 
 		//delete like if like found and user unliked statue 
-		} else if (query != null && is_liked === false) {
+		} else if (found != null && is_liked === false) {
+			console.log('--remove like')
 			const like = await Like.destroy({
         where: {
           user_id: user_id,
@@ -175,6 +186,8 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
           model_id: statue_id
         }
       });
+
+   		//const like = await statue.removeLike(query);
 
       return res.json(like);
 		}

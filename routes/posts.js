@@ -5,20 +5,14 @@ var express = require('express');
 var router = express.Router();
 var db = require ("../models");
 var Post = db.post;
-var Comment = db.comment;
 var Like = db.like;
-var Image = db.image;
 
 var VERBOSE = false;
 
 const { body, param, validationResult } = require('express-validator/check');
 const { asyncMiddleware } = require('./middleware');
 
-/*
-*	WHY THE F ARE CLASS & INSTANCE METHODS NOT WORKING :(
-*/
-
-const model_name = "Post";
+const model_name = "post";
 
 // ---- GET POSTS BY ID ----
 
@@ -41,13 +35,7 @@ router.get('/:id', [
 
 	const post = await Post.findById(id);
 
-	console.log('--POST RESPONSE,', post.dataValues)
-	console.log('--get comment', post.getComments());
-	console.log('--get image', post.getImages());
-	console.log('--get likes', post.getLikes());
-	//serialize with post, image, comments, likes
-
-	res.json(post);
+	res.json(await post.toJSON());
 }));
 
 // ---- GET POSTS ----
@@ -55,8 +43,7 @@ router.get('/:id', [
 router.get('', asyncMiddleware(async (req, res, next) => {
 
 	const user_id = req.session.user_id;
-	const query = req.query;
-	const { limit, page, liked, author } = query;
+	const { limit, page, liked, author } = req.query;
 
 	let query_params = {};
 
@@ -67,8 +54,6 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				user_id: author != null ? author : user_id
 			}
 		});
-
-		//console.log('--likes dataValues',likes, likes.dataValues, typeof likes.dataValues)
 
 		if (likes.dataValues == null) {
 			return res.json(likes);
@@ -90,36 +75,51 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 
 }), asyncMiddleware(async (req, res, next) => {
 
-	const query_params = res.locals.query_params;
-	const query = req.query;
-	const { limit, page } = query;
+	const { author, likes } = res.locals.query_params;
+	const { limit, page } = req.query;
 
 	if (limit == null && page == null) {
-		console.log('--finding all posts');
-
-		if (query_params.author != null) {
+		console.log('no pag')
+		if (author != null) {
 			console.log('author')
 			const posts = await Post.findAll({
 				where: {
-					user_id: query_params.author
+					user_id: author
 				}
 			});
 
-			return res.json(posts);
+			const result = await Promise.all(posts.map(async (post) => {
+	      const content = await post.toJSON()
+	      return content;
+	    }));
 
-		} else if (query_params.likes != null) {
+			return res.json(result);
+
+		} else if (likes != null) {
 			console.log('likes')
 			const posts = await Post.findAll({
 				where: {
-					id: query_params.likes
+					id: likes
 				}
 			});
 
-			return res.json(posts);
+			const result = await Promise.all(posts.map(async (post) => {
+	      const content = await post.toJSON()
+	      return content;
+	    }));
+
+			return res.json(result);
 		} 
 
-		console.log('findaALl');
+		console.log('findaAll');
+
 		const posts = await Post.findAll();
+
+		// const result = await Promise.all(posts.map(async (post) => {
+  //     const content = await post.toJSON()
+  //     return content;
+  //   }));
+
 		return res.json(posts);
 
 	} else {
@@ -127,16 +127,14 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	}
 }), asyncMiddleware(async (req, res, next) => {
 	//if here pagination is a must
-	const query_params = res.locals.query_params;
 	const { author, likes } = res.locals.query_params;
-	const query = req.query;
-	const { limit, page } = query;
+	const { limit, page } = req.query;
 
 	const offset = page > 1 ? (page - 1) * limit : 0;
 
 	let posts;
-
 	//author only
+	console.log('--author', author, '--likes',likes)
 	if (author != null && likes == null) {
 		posts = await Post.findAndCountAll({
 			where: {
@@ -145,14 +143,12 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			offset: offset,
     	limit: limit
 		});
-
-		return res.json(posts);
-
-	//if liked
+		
+	//if liked (takes care of author != null && likes != null)
 	} else if (likes != null) {
 			posts = await Post.findAndCountAll({
 			where: {
-				id: query_params.likes
+				id: likes
 			},
 			offset: offset,
 	  	limit: limit
@@ -163,6 +159,12 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	  	limit: limit
 		});
 	}
+
+	console.log('POSTS W/ LIMIT & PAGE', posts)
+	// const result = await Promise.all(posts.get('rows').map(async (post) => {
+ //    const content = await post.toJSON()
+ //    return content;
+ //  }));
 
 	return res.json(posts);
 }));
@@ -194,7 +196,7 @@ router.post('', [
 		statue_id: null
 	});
 
-	console.log('created post:', post)
+	console.log('-- 1created post:', post.dataValues)
 
 	//pass statue to next state
 	res.locals.post = post;
@@ -207,7 +209,6 @@ router.post('', [
 
 	//TODO configure aws s3 upload 
 	//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
-
 	const photoKey = 'dummy.png';
 	// s3.upload({
 	//     Key: photoKey,
@@ -220,17 +221,11 @@ router.post('', [
 	//     alert('Successfully uploaded photo.');
 	//   });
 
-	//This is going to fail. find way to securely patch in s3 bucket url without submitting it to github
-	const image = await Image.create({
-		url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey,
-		model_name: model_name,
-		model_id: post.id
+	const image = await post.createImage({
+		url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey
 	});
 
-	//TODO Serialize post w/ Comments, Likes, Images
-	//For now...
-
-	return res.json(post);
+	res.json(await post.toJSON());
 }));
 
 // ---- POST A COMMENT ----
@@ -244,13 +239,9 @@ router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
 
 	const post = await Post.findById(post_id);
 
-	console.log('post', post)
-
-	const comment = await Comment.create({
-    text: text,
-    user_id: user_id,
-    model_name: model_name,
-    model_id: post_id,
+  const comment = await post.createComment({
+  	text: text,
+    user_id: user_id
   });
 
 	return res.json(comment);
@@ -262,36 +253,32 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 
 		const body = req.body;
 		const is_liked = body.is_liked;
-		console.log('--is_liked:',is_liked)
 		const post_id = req.params.id;
 		const user_id = req.session.user_id;
 
 		const post = await Post.findById(post_id);
+		console.log('post',post.dataValues)
 
-		console.log('--found post:', user_id, post.get('id'), model_name);
-
-		const query = await Like.findOne({
-      where: {
+  	const query = await post.getLikes({
+  		where: {
         user_id: user_id,
-        model_id: post.get('id'),
-        model_name: model_name
-      }
-    });
+			}
+  	});
 
-		console.log('--like Query:', query);
-
+  	const found = query[0];
+  	console.log('found',found.dataValues)
 		//create like if not found and user liked statue
-		if (query == null && is_liked === true) {
-			const like = await Like.create({
-        user_id: user_id,
-        model_name: model_name,
-        model_id: post_id
+		if (found == null && is_liked === true) {
+			console.log('--create like')
+      const like = await post.createLike({
+      	user_id: user_id
       });
 
 			return res.json(like);
 
 		//delete like if like found and user unliked statue 
-		} else if (query != null && is_liked === false) {
+		} else if (found != null && is_liked === false) {
+			console.log('--remove like')
 			const like = await Like.destroy({
         where: {
           user_id: user_id,
@@ -300,7 +287,9 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
         }
       });
 
-      return res.json({});
+   		//const like = await post.removeLikes(found);
+
+      return res.json(like);
 		}
 
 		next();

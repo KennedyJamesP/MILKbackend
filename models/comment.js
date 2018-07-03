@@ -29,8 +29,19 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   comment.associate = function(models) {
-    // comment.hasOne(models.post, {foreignKey: 'comment'});
-    // comment.hasOne(models.statue, {foreignKey: 'comment'});
+    const { post, statue } = models;
+    
+    comment.belongsTo(post, {
+      foreignKey: 'model_id',
+      constraints: false,
+      as: 'post'
+    });
+
+    comment.belongsTo(statue, {
+      foreignKey: 'model_id',
+      constraints: false,
+      as: 'statue'
+    });
   };
 
   comment.prototype.toJSON = function () {
