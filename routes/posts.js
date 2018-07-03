@@ -3,9 +3,14 @@
 */
 var express = require('express');
 var router = express.Router();
+
 var db = require ("../models");
-var Post = db.post;
+var Comment = db.comment;
+var Image = db.image;
 var Like = db.like;
+var Post = db.post;
+var Statue = db.statue;
+var User = db.user;
 
 var VERBOSE = false;
 
@@ -14,7 +19,7 @@ const { asyncMiddleware } = require('./middleware');
 
 const model_name = "post";
 
-// ---- GET POSTS BY ID ----
+// ---- GET POST BY ID ----
 
 router.get('/:id', [
 		param('id').not().isEmpty().withMessage('post id was not provided')
@@ -33,7 +38,14 @@ router.get('/:id', [
     return res.status(422).json({ error: errorObj });
   }
 
-	const post = await Post.findById(id);
+	const post = await Post.findById(id, {
+			include: [
+				{model: Comment},
+				{model: Image},
+				{model: Like},
+				{model: User}
+			]
+		});
 
 	res.json(await post.toJSON());
 }));
@@ -52,7 +64,13 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			where: {
 				model_name: model_name,
 				user_id: author != null ? author : user_id
-			}
+			},
+			include: [
+				{model: Comment},
+				{model: Image},
+				{model: Like},
+				{model: User}
+			]
 		});
 
 		if (likes.dataValues == null) {

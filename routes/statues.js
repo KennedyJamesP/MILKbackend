@@ -4,8 +4,12 @@
 var express = require('express');
 var router = express.Router();
 var db = require ("../models");
-var Statue = db.statue;
+var Comment = db.comment;
+var Image = db.image;
 var Like = db.like;
+var Post = db.post;
+var Statue = db.statue;
+
 var VERBOSE = false;
 
 const { body, param, validationResult } = require('express-validator/check');
@@ -17,13 +21,20 @@ const model_name = "statue";
 
 router.get('', asyncMiddleware(async (req, res, next) => {
 
-	const statues = await Statue.findAll();
+	const statues = await Statue.findAll({
+		include: [
+			{model: Comment},
+			{model: Image},
+			{model: Like},
+			{model: Post}
+		]
+	});
 
 	//WITHOUT THIS, STATUES IS BROKEN
-	const result = await Promise.all(statues.map(async (statue) => {
-    const content = await statue.toJSON()
-    return content;
-  }));
+	// const result = await Promise.all(statues.map(async (statue) => {
+ //    const content = await statue.toJSON()
+ //    return content;
+ //  }));
 
 	res.json(statues);
 }));
@@ -57,9 +68,16 @@ router.get('/:id', [
     return res.status(422).json({ error: errorObj });
   }
 
-	const statue = await Statue.findById(id);
+	const statue = await Statue.findById(id, {
+		include: [
+			{model: Comment},
+			{model: Image},
+			{model: Like},
+			{model: Post}
+		]
+	});
 
-	res.json(await statue.toJSON());
+	res.json(statue.toJSON());
 }));
 
 // ---- POST STATUE ----
