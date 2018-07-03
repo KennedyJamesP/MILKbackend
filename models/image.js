@@ -29,13 +29,5 @@ module.exports = (sequelize, DataTypes) => {
   image.associate = function(models) {
   };
 
-  image.prototype.toJSON = function () {
-    var values = Object.assign({}, this.get());
-    
-    delete values.model_name;
-    delete values.model_id;
-    return values;
-  }
-
   return image;
 };

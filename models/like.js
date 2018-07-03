@@ -24,13 +24,5 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  like.prototype.toJSON = function () {
-    var values = Object.assign({}, this.get());
-    
-    delete values.model_name;
-    delete values.model_id;
-    return values;
-  }
-
   return like;
 };

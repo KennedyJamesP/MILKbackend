@@ -47,20 +47,6 @@ module.exports = (sequelize, DataTypes) => {
         model_name: 'statue'
       }
     });
-
-    statue.hasMany(post, {
-      targetKey: 'statue_id'
-    });
-  };
-
-  statue.prototype.toJSON = function () {
-    const statue = Object.assign({}, this.get());
-
-    // statue.comments = await this.getComments();
-    // statue.images = await this.getImages();
-    // statue.likes = await this.getLikes();
-
-    return statue;
   };
 
   return statue;

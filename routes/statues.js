@@ -25,16 +25,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 		include: [
 			{model: Comment},
 			{model: Image},
-			{model: Like},
-			{model: Post}
+			{model: Like}
 		]
 	});
-
-	//WITHOUT THIS, STATUES IS BROKEN
-	// const result = await Promise.all(statues.map(async (statue) => {
- //    const content = await statue.toJSON()
- //    return content;
- //  }));
 
 	res.json(statues);
 }));
@@ -45,8 +38,6 @@ router.get('/v2', asyncMiddleware(async (req, res, next) => {
 	const statues = await Statue.findAll({
 		attributes: ['id', 'location', 'title']
 	});
-
-	//THIS IS BROKEN
 
 	res.json(statues);
 }));
@@ -72,17 +63,14 @@ router.get('/:id', [
 		include: [
 			{model: Comment},
 			{model: Image},
-			{model: Like},
-			{model: Post}
+			{model: Like}
 		]
 	});
 
-	res.json(statue.toJSON());
+	res.json(statue);
 }));
 
 // ---- POST STATUE ----
-
-//TODO add in image_id
 
 router.post('', [
 		//validate statue fields
@@ -116,8 +104,7 @@ router.post('', [
 			statue_desc: statue_desc,
 			artist_desc: artist_desc,
 			artist_name: artist_name,
-			artist_url: artist_url,
-			image_id: null
+			artist_url: artist_url
 		});
 
 		//pass statue to next state
@@ -147,7 +134,7 @@ router.post('', [
 			url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey
 		});
 
-		return res.json(await statue.toJSON());
+		return res.json(statue);
 	})
 );
 
@@ -196,8 +183,7 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
 
 		//delete like if like found and user unliked statue 
 		} else if (found != null && is_liked === false) {
-			console.log('--remove like')
-			const like = await Like.destroy({
+			await Like.destroy({
         where: {
           user_id: user_id,
           model_name: model_name,
@@ -205,9 +191,10 @@ router.post('/:id/like',  asyncMiddleware(async (req, res, next) => {
         }
       });
 
+			//Todo try to get this one working
    		//const like = await statue.removeLike(query);
 
-      return res.json(like);
+      return res.json({});
 		}
 
 		next();

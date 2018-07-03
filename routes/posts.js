@@ -42,12 +42,11 @@ router.get('/:id', [
 			include: [
 				{model: Comment},
 				{model: Image},
-				{model: Like},
-				{model: User}
+				{model: Like}
 			]
 		});
 
-	res.json(await post.toJSON());
+	res.json(post);
 }));
 
 // ---- GET POSTS ----
@@ -58,22 +57,19 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	const { limit, page, liked, author } = req.query;
 
 	let query_params = {};
-
-	if (liked != null && liked === true) {
+	console.log('--POST QUERY',req.query, liked == 'true')
+	//if GET Liked
+	if (liked == 'true') {
 		const likes = await Like.findAll({
 			where: {
 				model_name: model_name,
 				user_id: author != null ? author : user_id
-			},
-			include: [
-				{model: Comment},
-				{model: Image},
-				{model: Like},
-				{model: User}
-			]
+			}
 		});
 
-		if (likes.dataValues == null) {
+		console.log('--LIKES',likes)
+
+		if (likes == null) {
 			return res.json(likes);
 		}else {
 			query_params.likes = [];
@@ -81,7 +77,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				query_params.likes.push(el.get('model_id'));
 			});
 		}
-		//console.log('--formatted liked post ids:', query_params.likes)
+		console.log('--formatted liked post ids:', query_params.likes)
 	}
 
 	if (author != null) {
@@ -97,46 +93,46 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	const { limit, page } = req.query;
 
 	if (limit == null && page == null) {
-		console.log('no pag')
 		if (author != null) {
 			console.log('author')
 			const posts = await Post.findAll({
 				where: {
 					user_id: author
-				}
+				},
+				include: [
+					{model: Comment},
+					{model: Image},
+					{model: Like}
+				]
 			});
 
-			const result = await Promise.all(posts.map(async (post) => {
-	      const content = await post.toJSON()
-	      return content;
-	    }));
-
-			return res.json(result);
+			return res.json(posts);
 
 		} else if (likes != null) {
 			console.log('likes')
 			const posts = await Post.findAll({
 				where: {
 					id: likes
-				}
+				},
+				include: [
+					{model: Comment},
+					{model: Image},
+					{model: Like}
+				]
 			});
 
-			const result = await Promise.all(posts.map(async (post) => {
-	      const content = await post.toJSON()
-	      return content;
-	    }));
-
-			return res.json(result);
+			return res.json(posts);
 		} 
 
 		console.log('findaAll');
 
-		const posts = await Post.findAll();
-
-		// const result = await Promise.all(posts.map(async (post) => {
-  //     const content = await post.toJSON()
-  //     return content;
-  //   }));
+		const posts = await Post.findAll({
+			include: [
+				{model: Comment},
+				{model: Image},
+				{model: Like}
+			]
+		});
 
 		return res.json(posts);
 
@@ -158,6 +154,11 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			where: {
 				user_id: author
 			},
+			include: [
+				{model: Comment},
+				{model: Image},
+				{model: Like}
+			],
 			offset: offset,
     	limit: limit
 		});
@@ -168,21 +169,25 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			where: {
 				id: likes
 			},
+			include: [
+				{model: Comment},
+				{model: Image},
+				{model: Like}
+			],
 			offset: offset,
 	  	limit: limit
 		});
 	} else {
 		posts = await Post.findAndCountAll({
+			include: [
+				{model: Comment},
+				{model: Image},
+				{model: Like}
+			],
 			offset: offset,
 	  	limit: limit
 		});
 	}
-
-	console.log('POSTS W/ LIMIT & PAGE', posts)
-	// const result = await Promise.all(posts.get('rows').map(async (post) => {
- //    const content = await post.toJSON()
- //    return content;
- //  }));
 
 	return res.json(posts);
 }));
@@ -208,13 +213,11 @@ router.post('', [
   const user_id = req.session.user_id;
 	const { location } = req.body;
 
+	//TODO MAYBE ADD INCLUDES
 	const post = await Post.create({
 		location: location,
-		user_id: user_id,
-		statue_id: null
+		user_id: user_id
 	});
-
-	console.log('-- 1created post:', post.dataValues)
 
 	//pass statue to next state
 	res.locals.post = post;
@@ -243,13 +246,12 @@ router.post('', [
 		url: "ASK NOAH FOR THE S3 BUCKET URL/" + photoKey
 	});
 
-	res.json(await post.toJSON());
+	res.json(post);
 }));
 
 // ---- POST A COMMENT ----
 
 router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
-	console.log('comment', "user",req.session.user_id)
 	const user_id = req.session.user_id;
 	const body = req.body;
 	const post_id = req.params.id;
@@ -275,7 +277,6 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 		const user_id = req.session.user_id;
 
 		const post = await Post.findById(post_id);
-		console.log('post',post.dataValues)
 
   	const query = await post.getLikes({
   		where: {
@@ -284,7 +285,7 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
   	});
 
   	const found = query[0];
-  	console.log('found',found.dataValues)
+
 		//create like if not found and user liked statue
 		if (found == null && is_liked === true) {
 			console.log('--create like')
@@ -297,7 +298,7 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 		//delete like if like found and user unliked statue 
 		} else if (found != null && is_liked === false) {
 			console.log('--remove like')
-			const like = await Like.destroy({
+			await Like.destroy({
         where: {
           user_id: user_id,
           model_name: model_name,
@@ -305,9 +306,10 @@ router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
         }
       });
 
+			//Todo try to get this one working
    		//const like = await post.removeLikes(found);
 
-      return res.json(like);
+      return res.json({});
 		}
 
 		next();

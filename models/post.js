@@ -7,10 +7,6 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true
     },
-    statue_id: { 
-      type: DataTypes.INTEGER,
-      allowNull: false, 
-    },
     user_id: { 
       type: DataTypes.INTEGER,
       allowNull: false, 
@@ -47,18 +43,6 @@ module.exports = (sequelize, DataTypes) => {
         model_name: 'post'
       }
     });
-  };
-
-  post.prototype.toJSON =  function () {
-   const post = Object.assign({}, this.get());
-
-    // post.comments = await this.getComments();
-    // post.images = await this.getImages();
-    // post.likes = await this.getLikes();
-
-    //delete post.user_id;
-
-    return (post);
   };
 
   return post;
