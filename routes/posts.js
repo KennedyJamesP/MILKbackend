@@ -209,10 +209,11 @@ router.post('',upload.any(), [
   }
 
   const user_id = req.session.user_id;
-	const { location } = req.body;
+	const { caption, location } = req.body;
 
 	//TODO MAYBE ADD INCLUDES
 	const post = await Post.create({
+		caption: caption,
 		location: location,
 		user_id: user_id
 	});

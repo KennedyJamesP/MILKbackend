@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false, 
     },
+    caption: DataTypes.STRING,
     location: DataTypes.STRING
   }, 
   {
