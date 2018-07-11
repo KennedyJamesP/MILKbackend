@@ -11,6 +11,7 @@ var Image = db.image;
 var Like = db.like;
 var Post = db.post;
 var Statue = db.statue;
+var User = db.user;
 
 var VERBOSE = false;
 
@@ -27,7 +28,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 		include: [
 			{model: Comment},
 			{model: Image},
-			{model: Like}
+			{model: Like, include:[User]}
 		]
 	});
 
@@ -65,7 +66,7 @@ router.get('/:id', [
 		include: [
 			{model: Comment},
 			{model: Image},
-			{model: Like}
+			{model: Like, include:[User]}
 		]
 	});
 

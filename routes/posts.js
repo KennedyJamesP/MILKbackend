@@ -11,6 +11,8 @@ var Image = db.image;
 var Like = db.like;
 var Post = db.post;
 var Statue = db.statue;
+var User = db.user;
+
 var VERBOSE = false;
 
 const { body, param, validationResult } = require('express-validator/check');
@@ -31,7 +33,7 @@ router.get('/:id', [
   	let errorObj = {};
   	errors.array().forEach(function(err) {
   		errorObj[err.param] = err.msg;
-  	})
+  	});
     return res.status(422).json({ error: errorObj });
   }
 
@@ -41,7 +43,7 @@ router.get('/:id', [
 		include: [
 			{model: Comment},
 			{model: Image},
-			{model: Like}
+			{model: Like, include: [User]}
 		]
 	});
 
@@ -63,7 +65,8 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			where: {
 				model_name: model_name,
 				user_id: author != null ? author : user_id
-			}
+			},
+			include: [User]
 		});
 
 		if (likes == null) {
@@ -98,7 +101,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				include: [
 					{model: Comment},
 					{model: Image},
-					{model: Like}
+					{model: Like, include:[User]}
 				]
 			});
 
@@ -113,7 +116,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				include: [
 					{model: Comment},
 					{model: Image},
-					{model: Like}
+					{model: Like, include:[User]}
 				]
 			});
 
@@ -125,7 +128,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			include: [
 				{model: Comment},
 				{model: Image},
-				{model: Like}
+				{model: Like, include:[User]}
 			]
 		});
 
@@ -152,7 +155,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			include: [
 				{model: Comment},
 				{model: Image},
-				{model: Like}
+				{model: Like, include:[User]}
 			],
 			offset: offset,
     	limit: limit
@@ -167,7 +170,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			include: [
 				{model: Comment},
 				{model: Image},
-				{model: Like}
+				{model: Like, include:[User]}
 			],
 			offset: offset,
 	  	limit: limit
@@ -177,7 +180,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			include: [
 				{model: Comment},
 				{model: Image},
-				{model: Like}
+				{model: Like, include:[User]}
 			],
 			offset: offset,
 	  	limit: limit
