@@ -98,7 +98,7 @@ router.post('',upload.any(), [
 	  	return res.status(400).json({error: "Post must be uploaded with an image"})
 	  }
 
-		const user_id = req.session.user_id;
+		//const user_id = req.session.user_id;
 		const body = req.body;
 		const { location, title, statue_desc, artist_desc, artist_name, artist_url } = body || {};
 
@@ -119,13 +119,15 @@ router.post('',upload.any(), [
 	}), asyncMiddleware(async (req, res, next) => {
 		const { statue } = res.locals;
 	
-	  const url = aws.s3ImageUpload(req.files[0].buffer);
+	  const url = "testing"// aws.s3ImageUpload(req.files[0].buffer);
 	  
-		const image = await post.createImage({
+	  console.log("before image");
+
+		const image = await statue.createImage({
 			url: url
 		});
 
-		//how to merge image and post?
+		console.log("after image", image);
 
 		res.json({statue, image});
 	})
