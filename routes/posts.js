@@ -240,7 +240,19 @@ router.post('',upload.any(), [
 	res.json({post, image});
 }));
 
-// ---- POST A COMMENT ----
+// ---- COMMENT ----
+
+router.get('/:id/comment', asyncMiddleware(async (req, res, next) => {
+	const post_id = req.params.id;
+
+	const comments = await Comment.find({
+		where: {
+			model_id: post_id
+		}
+	});
+
+	return res.json(comments);
+}));
 
 router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
 	const user_id = req.session.user_id;
@@ -258,7 +270,7 @@ router.post('/:id/comment', asyncMiddleware(async (req, res, next) => {
 	return res.json(comment);
 }));
 
-// ---- LIKE A POST ----
+// ---- LIKE ----
 
 router.post('/:id/like', asyncMiddleware(async (req, res, next) => {
 

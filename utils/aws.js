@@ -9,7 +9,7 @@ var IdentityPoolId = process.env.IdentityPoolI;
 module.exports = {
 	s3ImageUpload: function(file) {
 		const uuid = uuidv1();
-		const photoKey = 'uploads/'+uuid+'.png';
+		const photoKey = 'uploads/'+uuid+'.jpeg';
 
 		//TODO we want authenticated s3 uploads. commented out code not working & is still not authenticated
 		//https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html
