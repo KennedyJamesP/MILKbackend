@@ -9,6 +9,7 @@
   "dependencies": {
     "aws-sdk": "^2.268.1",
     "body-parser": "^1.18.3",
+    "connect-session-sequelize": "^5.2.2",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
     "dotenv": "^6.0.0",

@@ -8,14 +8,21 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var db = require('./models');
-
 var session = require('express-session');
+var SequelizeStore = require('connect-session-sequelize')(session.Store);
 
+var db = require('./models');
 var users = require('./routes/users');
 var statues = require('./routes/statues');
 var posts = require('./routes/posts');
 var facts = require('./routes/facts');
+
+var sequelizeSessionStore = new SequelizeStore({
+  db: db.sequelize,
+  expiration: 30 * 24 * 60 * 60 * 1000
+});
+
+sequelizeSessionStore.sync();
 
 var app = express();
 
@@ -23,7 +30,8 @@ app.use(session({
   cookie: { maxAge: 30 * 24 * 60 * 60 * 1000}, //30 days in milliseconds
   secret: 'milk_auth_milk',
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
+  store: sequelizeSessionStore
 }));
 
 app.use(logger('dev'));
