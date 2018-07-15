@@ -19,7 +19,11 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   post.associate = function(models) {
-    const { comment, image, like } = models;
+    const { comment, image, like, statue } = models;
+
+    post.belongsTo(statue, {
+      foreignKey: 'statue_id'
+    });
 
     post.hasMany(comment, {
       foreignKey: 'model_id',

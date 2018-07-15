@@ -231,12 +231,14 @@ router.post('',upload.any(), [
 
   const user_id = req.session.user_id;
 	const { caption, location } = req.body;
+	const statue_id = req.body.statue_id ? req.body.statue_id : null;
 
 	//TODO MAYBE ADD INCLUDES
 	const post = await Post.create({
 		caption: caption,
 		location: location,
-		user_id: user_id
+		user_id: user_id,
+		statue_id: statue_id
 	});
 
 	//pass statue to next state
