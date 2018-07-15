@@ -7,7 +7,7 @@ var bucketRegion = process.env.bucketRegion;
 var IdentityPoolId = process.env.IdentityPoolI;
 
 module.exports = {
-	s3ImageUpload: function(file) {
+	s3ImageUpload: async function(file) {
 		const uuid = uuidv1();
 		const photoKey = 'uploads/'+uuid+'.jpeg';
 
@@ -39,17 +39,17 @@ module.exports = {
 	  //https://www.nodejsera.com/storing-files-in-amazon-s3-using-node.html
 
 	  
-	  var s3 = new AWS.S3();
+	  	var s3 = new AWS.S3();
 		
 		const params = {Bucket: albumBucketName, Key: photoKey, Body: file, ACL: 'public-read' };
-	 	s3.putObject(params, function(err, data) {
-	    if (err) {
-	      console.log(err)
-	    } else {
-	      console.log("Successfully uploaded to s3 ");
-	    }
-	  });
-
-	  return awsHost+'/'+albumBucketName+'/'+photoKey
+	 	try {
+			const upload_promise = await s3.putObject(params).promise();
+	      		console.log("Successfully uploaded to s3 ");
+	      		return awsHost+'/'+albumBucketName+'/'+photoKey;
+	    	}
+		catch(err) {
+			console.log(err);
+			throw err;
+		}
 	}
 }

@@ -119,7 +119,7 @@ router.post('',upload.any(), [
 	}), asyncMiddleware(async (req, res, next) => {
 		const { statue } = res.locals;
 	
-	  const url = "testing"// aws.s3ImageUpload(req.files[0].buffer);
+	  const url = await aws.s3ImageUpload(req.files[0].buffer);
 	  
 	  console.log("before image");
 

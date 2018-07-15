@@ -249,7 +249,7 @@ router.post('',upload.any(), [
 
 	const { post } = res.locals;
 	
-  const url = aws.s3ImageUpload(req.files[0].buffer);
+  const url = await aws.s3ImageUpload(req.files[0].buffer);
   
 	const image = await post.createImage({
 		url: url
@@ -257,7 +257,7 @@ router.post('',upload.any(), [
 
 	//how to merge image and post?
 
-	res.json({post, image});
+	res.json({post:post, image:image});
 }));
 
 // ---- COMMENT ----
