@@ -98,6 +98,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				where: {
 					user_id: author
 				},
+				order: [
+	        ['created_at', 'DESC']
+	      ],
 				include: [
 					{model: Comment},
 					{model: Image},
@@ -113,6 +116,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 				where: {
 					id: likes
 				},
+				order: [
+	        ['created_at', 'DESC']
+	      ],
 				include: [
 					{model: Comment},
 					{model: Image},
@@ -125,6 +131,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 
 		console.log('findaAll');
 		const posts = await Post.findAll({
+			order: [
+        ['created_at', 'DESC']
+      ],
 			include: [
 				{model: Comment},
 				{model: Image},
@@ -152,6 +161,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			where: {
 				user_id: author
 			},
+			order: [
+        ['created_at', 'DESC']
+      ],
 			include: [
 				{model: Comment},
 				{model: Image},
@@ -167,6 +179,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 			where: {
 				id: likes
 			},
+			order: [
+        ['created_at', 'DESC']
+      ],
 			include: [
 				{model: Comment},
 				{model: Image},
@@ -177,6 +192,9 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 		});
 	} else {
 		posts = await Post.findAndCountAll({
+			order: [
+        ['created_at', 'DESC']
+      ],
 			include: [
 				{model: Comment},
 				{model: Image},
@@ -245,7 +263,7 @@ router.post('',upload.any(), [
 router.get('/:id/comment', asyncMiddleware(async (req, res, next) => {
 	const post_id = req.params.id;
 
-	const comments = await Comment.find({
+	const comments = await Comment.findAll({
 		where: {
 			model_id: post_id
 		}

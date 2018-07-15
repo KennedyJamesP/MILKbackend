@@ -138,7 +138,7 @@ router.post('',upload.any(), [
 router.get('/:id/comment', asyncMiddleware(async (req, res, next) => {
 	const post_id = req.params.id;
 
-	const comments = await Comment.find({
+	const comments = await Comment.findAll({
 		where: {
 			model_id: post_id
 		}
