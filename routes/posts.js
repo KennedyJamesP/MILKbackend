@@ -41,7 +41,7 @@ router.get('/:id', [
 
 	const post = await Post.findById(id, {
 		include: [
-			{model: Comment},
+			{model: Comment, include: [User]},
 			{model: Image},
 			{model: Like, include: [User]}
 		]
@@ -102,7 +102,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	        ['created_at', 'DESC']
 	      ],
 				include: [
-					{model: Comment},
+					{model: Comment, include:[User]},
 					{model: Image},
 					{model: Like, include:[User]}
 				]
@@ -120,7 +120,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 	        ['created_at', 'DESC']
 	      ],
 				include: [
-					{model: Comment},
+					{model: Comment, include: [User]},
 					{model: Image},
 					{model: Like, include:[User]}
 				]
@@ -135,7 +135,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
         ['created_at', 'DESC']
       ],
 			include: [
-				{model: Comment},
+				{model: Comment, include: [User]},
 				{model: Image},
 				{model: Like, include:[User]}
 			]
@@ -165,7 +165,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
         ['created_at', 'DESC']
       ],
 			include: [
-				{model: Comment},
+				{model: Comment, include: [User]},
 				{model: Image},
 				{model: Like, include:[User]}
 			],
@@ -183,7 +183,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
         ['created_at', 'DESC']
       ],
 			include: [
-				{model: Comment},
+				{model: Comment, include: [User]},
 				{model: Image},
 				{model: Like, include:[User]}
 			],
@@ -196,7 +196,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
         ['created_at', 'DESC']
       ],
 			include: [
-				{model: Comment},
+				{model: Comment, include: [User]},
 				{model: Image},
 				{model: Like, include:[User]}
 			],

@@ -26,7 +26,7 @@ router.get('', asyncMiddleware(async (req, res, next) => {
 
 	const statues = await Statue.findAll({
 		include: [
-			{model: Comment},
+			{model: Comment, include: [User]},
 			{model: Image},
 			{model: Like, include:[User]}
 		]
@@ -64,7 +64,7 @@ router.get('/:id', [
 
 	const statue = await Statue.findById(id, {
 		include: [
-			{model: Comment},
+			{model: Comment, include: [User]},
 			{model: Image},
 			{model: Like, include:[User]}
 		]
