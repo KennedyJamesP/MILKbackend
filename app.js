@@ -20,6 +20,7 @@ var facts = require('./routes/facts');
 var app = express();
 
 app.use(session({
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000}, //30 days in milliseconds
   secret: 'milk_auth_milk',
   resave: false,
   saveUninitialized: true

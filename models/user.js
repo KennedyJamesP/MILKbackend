@@ -22,6 +22,11 @@ module.exports = (sequelize, DataTypes) => {
     image_id: DataTypes.INTEGER
   }, 
   {
+    defaultScope: {
+      attributes: { 
+        exclude: ['password']
+      }
+    },
     underscored: true
   });
 
