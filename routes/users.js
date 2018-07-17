@@ -3,6 +3,11 @@
 
 var express = require('express');
 var router = express.Router();
+
+const aws = require('../utils/aws');
+const multer = require('multer');
+const upload = multer();
+
 var db = require ("../models");
 var User = db.user;
 var VERBOSE = false;
@@ -138,7 +143,6 @@ router.get("/:id", [
 // ---- POST IMAGE ---- 
 
 router.put('/image',upload.any(), asyncMiddleware(async (req, res, next) => {
-
 	//check form validation before consuming the request
 	const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -161,18 +165,63 @@ router.put('/image',upload.any(), asyncMiddleware(async (req, res, next) => {
 		url: url
 	});
 
-	User.update(
+	await User.update(
     {profile_url: url},
     {returning: true, where: {id: user_id} }
  	)
 
 	res.json(image);
 }));
+
+//----- SETTINGS -----
+
+router.put('/settings',[
+		body('email').custom(email => {
+	  return User.findOne({where: {email: email}}).then(user => {
+	    if (user) {
+	      return Promise.reject('E-mail already in use');
+	    }
+	  });
+		}).isEmail().withMessage('must provide a valid email'),
+
+	  body('username').custom(username => {
+		  return User.findOne({where: {username: username}}).then(user => {
+		    if (user) {
+		      return Promise.reject('Username already in use');
+		    }
+		  });
+		}).isLength({ min: 5 }).withMessage('must be at least 5 characters long')
+	], asyncMiddleware(async (req, res, next) => {
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+  	let errorObj = {};
+  	errors.array().forEach(function(err) {
+  		errorObj[err.param] = err.msg;
+  	})
+    return res.status(422).json({ error: errorObj });
+  }
+
+  const user_id = req.session.user_id;
+	const { email, username } = req.body;
+
+	console.log("BEFORE UPDATE USER", email, username, user_id)
+
+	let updatedUser = await User.update(
+    {
+    	email: email,
+    	username: username 
+    },
+    {returning: true, where: {id: user_id} }
+ 	)
+
+	console.log("AFTER UPDATE USER", updatedUser)
+	res.json(updatedUser[1][0])
+	//res.json(updatedUser);
+}));
 //----- SIGNOUT -----
 
 router.post("/signout", asyncMiddleware(async (req, res, next) => {
-	console.log("serving /users/signout request");
-
 	if (req.session && req.session.user_id) {
 		await req.session.destroy();
 		return res.json({loggedout: true});
