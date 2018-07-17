@@ -135,6 +135,39 @@ router.get("/:id", [
 	res.json(user.toJSON());
 }));
 
+// ---- POST IMAGE ---- 
+
+router.put('/image',upload.any(), asyncMiddleware(async (req, res, next) => {
+
+	//check form validation before consuming the request
+	const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+  	let errorObj = {};
+  	errors.array().forEach(function(err) {
+  		errorObj[err.param] = err.msg;
+  	})
+    return res.status(422).json({ error: errorObj });
+  }
+
+  if (req.files == null) {
+  	return res.status(400).json({error: "Post must be uploaded with an image"})
+  }
+
+  const user_id = req.session.user_id;
+
+	const url = await aws.s3ImageUpload(req.files[0].buffer);
+  
+	const image = await post.createImage({
+		url: url
+	});
+
+	User.update(
+    {profile_url: url},
+    {returning: true, where: {id: user_id} }
+ 	)
+
+	res.json(image);
+}));
 //----- SIGNOUT -----
 
 router.post("/signout", asyncMiddleware(async (req, res, next) => {
