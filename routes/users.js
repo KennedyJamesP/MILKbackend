@@ -205,8 +205,6 @@ router.put('/settings',[
   const user_id = req.session.user_id;
 	const { email, username } = req.body;
 
-	console.log("BEFORE UPDATE USER", email, username, user_id)
-
 	let updatedUser = await User.update(
     {
     	email: email,
@@ -215,9 +213,8 @@ router.put('/settings',[
     {returning: true, where: {id: user_id} }
  	)
 
-	console.log("AFTER UPDATE USER", updatedUser)
+	//returns user model
 	res.json(updatedUser[1][0])
-	//res.json(updatedUser);
 }));
 //----- SIGNOUT -----
 
