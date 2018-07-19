@@ -12,18 +12,15 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false, 
     },
     caption: DataTypes.STRING,
-    location: DataTypes.STRING
+    location: DataTypes.STRING,
+    statue_id: DataTypes.INTEGER
   }, 
   {
     underscored: true
   });
 
   post.associate = function(models) {
-    const { comment, image, like, statue } = models;
-
-    post.belongsTo(statue, {
-      foreignKey: 'statue_id'
-    });
+    const { comment, image, like } = models;
 
     post.hasMany(comment, {
       foreignKey: 'model_id',
