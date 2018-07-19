@@ -165,12 +165,12 @@ router.put('/image',upload.any(), asyncMiddleware(async (req, res, next) => {
 		url: url
 	});
 
-	await User.update(
+	let updatedUser = await User.update(
     {profile_url: url},
     {returning: true, where: {id: user_id} }
  	)
 
-	res.json(image);
+	res.json(updatedUser[1][0])
 }));
 
 //----- SETTINGS -----
